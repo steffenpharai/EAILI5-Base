@@ -1,0 +1,311 @@
+{
+  "content": [
+    {
+      "id": "crypto-001",
+      "title": "What is Cryptocurrency?",
+      "content": "Cryptocurrency is digital money that exists only online. Think of it like digital coins that you can send to anyone in the world, just like sending an email. Unlike regular money that banks control, cryptocurrency is decentralized - no single person or company controls it.",
+      "category": "basics",
+      "difficulty_level": 1,
+      "tags": ["cryptocurrency", "digital", "money", "beginner", "decentralized"],
+      "learning_objectives": [
+        "Understand what cryptocurrency is",
+        "Know how it differs from traditional money",
+        "Recognize the benefits of digital currency",
+        "Understand decentralization"
+      ],
+      "examples": [
+        "Bitcoin is like digital gold",
+        "Ethereum is like a digital computer",
+        "You can send crypto to anyone, anywhere, anytime"
+      ],
+      "analogies": [
+        "Like email vs regular mail - faster and cheaper",
+        "Like digital photos vs printed photos - can be copied perfectly",
+        "Like online banking but without the bank"
+      ]
+    },
+    {
+      "id": "crypto-002",
+      "title": "What is a Blockchain?",
+      "content": "A blockchain is like a digital notebook that everyone can see and verify. Once something is written in it, it can't be erased or changed. It's like a public record that thousands of computers around the world keep copies of, making it nearly impossible to hack or cheat.",
+      "category": "blockchain",
+      "difficulty_level": 1,
+      "tags": ["blockchain", "digital", "notebook", "secure", "public"],
+      "learning_objectives": [
+        "Understand what a blockchain is",
+        "Know why it's secure and trustworthy",
+        "Recognize how it works",
+        "Understand immutability"
+      ],
+      "examples": [
+        "Like a public ledger that everyone can see",
+        "Like a chain of blocks, each connected to the previous one",
+        "Like a digital fingerprint that can't be faked"
+      ],
+      "analogies": [
+        "Like a public library where everyone can read the books",
+        "Like a digital voting booth that records every vote",
+        "Like a digital notary that verifies documents"
+      ]
+    },
+    {
+      "id": "crypto-003",
+      "title": "What is a Wallet?",
+      "content": "A crypto wallet is like a digital version of your physical wallet, but for cryptocurrency. It stores your digital money and lets you send and receive it. There are two main types: hot wallets (connected to internet) and cold wallets (offline for extra security).",
+      "category": "wallets",
+      "difficulty_level": 1,
+      "tags": ["wallet", "digital", "storage", "security", "hot", "cold"],
+      "learning_objectives": [
+        "Understand what a crypto wallet is",
+        "Know the difference between hot and cold wallets",
+        "Learn how to keep your wallet secure",
+        "Understand private keys"
+      ],
+      "examples": [
+        "MetaMask is a popular hot wallet",
+        "Hardware wallets like Ledger are cold wallets",
+        "Your wallet has a public address (like an email) and a private key (like a password)"
+      ],
+      "analogies": [
+        "Like a digital bank account but you control it",
+        "Like a digital safe with a special key",
+        "Like a digital ID card for your crypto"
+      ]
+    },
+    {
+      "id": "trading-001",
+      "title": "What is Trading?",
+      "content": "Trading is buying and selling things to make a profit. In crypto, you buy tokens when you think the price will go up, and sell when you think it will go down. It's like buying low and selling high, but with digital assets instead of physical goods.",
+      "category": "trading",
+      "difficulty_level": 2,
+      "tags": ["trading", "buy", "sell", "profit", "price", "market"],
+      "learning_objectives": [
+        "Understand what trading means",
+        "Know the basic concept of buying low and selling high",
+        "Recognize the risks involved",
+        "Understand market dynamics"
+      ],
+      "examples": [
+        "Buy Bitcoin at $30,000, sell at $40,000 = $10,000 profit",
+        "Buy Ethereum at $2,000, sell at $1,500 = $500 loss",
+        "Day trading means buying and selling within the same day"
+      ],
+      "analogies": [
+        "Like buying and selling stocks, but with crypto",
+        "Like buying a house and selling it for more later",
+        "Like trading cards - buy low, sell high"
+      ]
+    },
+    {
+      "id": "trading-002",
+      "title": "Long vs Short Positions",
+      "content": "A 'long' position means you buy something hoping the price goes up. A 'short' position means you bet the price will go down (more advanced). Most beginners start with long positions - buying and holding crypto they believe in.",
+      "category": "trading",
+      "difficulty_level": 2,
+      "tags": ["long", "short", "positions", "trading", "buy", "sell"],
+      "learning_objectives": [
+        "Understand long positions",
+        "Understand short positions",
+        "Know when to use each strategy",
+        "Recognize the risks of each"
+      ],
+      "examples": [
+        "Long: Buy Bitcoin at $30,000, hope it goes to $50,000",
+        "Short: Borrow Bitcoin, sell it at $30,000, buy back at $20,000",
+        "Most people start with long positions"
+      ],
+      "analogies": [
+        "Long is like buying a house hoping it appreciates",
+        "Short is like betting against a sports team",
+        "Long is like planting a seed and waiting for it to grow"
+      ]
+    },
+    {
+      "id": "defi-001",
+      "title": "What is DeFi?",
+      "content": "DeFi (Decentralized Finance) is like traditional banking, but without banks. You can lend, borrow, and trade directly with other people through smart contracts. It's like having a bank that runs automatically on code, with no human managers.",
+      "category": "defi",
+      "difficulty_level": 2,
+      "tags": ["defi", "decentralized", "finance", "banking", "smart contracts"],
+      "learning_objectives": [
+        "Understand what DeFi is",
+        "Know how it differs from traditional finance",
+        "Recognize the benefits and risks",
+        "Understand smart contracts"
+      ],
+      "examples": [
+        "Lend your crypto and earn interest automatically",
+        "Borrow money using your crypto as collateral",
+        "Trade tokens without a centralized exchange"
+      ],
+      "analogies": [
+        "Like a bank but run by code instead of people",
+        "Like a vending machine for financial services",
+        "Like a digital marketplace for money"
+      ]
+    },
+    {
+      "id": "defi-002",
+      "title": "What is a DEX?",
+      "content": "A DEX (Decentralized Exchange) is like a stock market for cryptocurrency, but it runs automatically without a central authority controlling it. You can trade tokens directly with other people through smart contracts, without needing to trust a middleman.",
+      "category": "dex",
+      "difficulty_level": 2,
+      "tags": ["dex", "exchange", "decentralized", "trading", "trustless"],
+      "learning_objectives": [
+        "Understand what a DEX is",
+        "Know how it differs from centralized exchanges",
+        "Recognize the benefits of decentralized trading",
+        "Understand liquidity pools"
+      ],
+      "examples": [
+        "Uniswap is a popular DEX on Ethereum",
+        "Aerodrome is a DEX on Base",
+        "You provide liquidity and earn fees"
+      ],
+      "analogies": [
+        "Like a farmers market but for crypto",
+        "Like a vending machine that trades tokens",
+        "Like a digital auction house"
+      ]
+    },
+    {
+      "id": "security-001",
+      "title": "How to Stay Safe in Crypto",
+      "content": "Never share your private keys or seed phrases with anyone. Always double-check website URLs. Start with small amounts to learn safely. Use hardware wallets for large amounts. Be suspicious of anything that sounds too good to be true.",
+      "category": "security",
+      "difficulty_level": 1,
+      "tags": ["security", "safety", "private keys", "protection", "scams"],
+      "learning_objectives": [
+        "Understand basic security practices",
+        "Know how to protect private keys",
+        "Recognize common scams",
+        "Learn about hardware wallets"
+      ],
+      "examples": [
+        "Never share your 12-word seed phrase",
+        "Always verify you're on the correct website",
+        "Start with $10-20 to learn safely"
+      ],
+      "analogies": [
+        "Like keeping your house keys safe",
+        "Like checking the address before entering a building",
+        "Like learning to swim in shallow water first"
+      ]
+    },
+    {
+      "id": "base-001",
+      "title": "What is Base?",
+      "content": "Base is a Layer 2 blockchain built by Coinbase. It's faster and cheaper than Ethereum, making it perfect for everyday crypto activities. Think of it as a faster highway built on top of Ethereum's security.",
+      "category": "base",
+      "difficulty_level": 2,
+      "tags": ["base", "layer 2", "coinbase", "ethereum", "scaling"],
+      "learning_objectives": [
+        "Understand what Base is",
+        "Know why it's faster and cheaper",
+        "Recognize its connection to Coinbase",
+        "Understand Layer 2 scaling"
+      ],
+      "examples": [
+        "Base transactions cost less than $0.01",
+        "Base is built by Coinbase but is decentralized",
+        "You can bridge ETH from Ethereum to Base"
+      ],
+      "analogies": [
+        "Like a fast lane on a highway",
+        "Like a local branch of a big bank",
+        "Like a shortcut that's still connected to the main road"
+      ]
+    },
+    {
+      "id": "trading-003",
+      "title": "Dollar Cost Averaging (DCA)",
+      "content": "Dollar Cost Averaging means buying a fixed amount of crypto regularly, regardless of price. It's like putting money into a savings account every month. This strategy reduces the impact of price volatility and helps you build wealth over time.",
+      "category": "trading",
+      "difficulty_level": 2,
+      "tags": ["dca", "dollar cost averaging", "strategy", "long term", "volatility"],
+      "learning_objectives": [
+        "Understand what DCA is",
+        "Know how it reduces volatility impact",
+        "Learn when to use DCA",
+        "Understand long-term investing"
+      ],
+      "examples": [
+        "Buy $100 of Bitcoin every month",
+        "Buy $50 of Ethereum every week",
+        "Set up automatic purchases"
+      ],
+      "analogies": [
+        "Like contributing to a 401k every month",
+        "Like buying groceries regularly regardless of price",
+        "Like saving money in a piggy bank"
+      ]
+    },
+    {
+      "id": "trading-004",
+      "title": "Risk Management",
+      "content": "Never invest more than you can afford to lose. Diversify your portfolio across different assets. Set stop-losses to limit losses. Don't put all your eggs in one basket. Start small and learn as you go.",
+      "category": "trading",
+      "difficulty_level": 2,
+      "tags": ["risk", "management", "diversification", "stop loss", "portfolio"],
+      "learning_objectives": [
+        "Understand risk management principles",
+        "Know how to diversify a portfolio",
+        "Learn about stop-losses",
+        "Understand position sizing"
+      ],
+      "examples": [
+        "Only invest 5% of your savings in crypto",
+        "Don't put all money in one token",
+        "Set a stop-loss at 20% down"
+      ],
+      "analogies": [
+        "Like wearing a seatbelt when driving",
+        "Like having different types of insurance",
+        "Like not putting all your money in one stock"
+      ]
+    }
+  ],
+  "learning_paths": {
+    "beginner": {
+      "id": "beginner",
+      "title": "Crypto Basics for Beginners",
+      "description": "Start your crypto journey with the fundamentals",
+      "difficulty_level": 1,
+      "estimated_time": "2-3 hours",
+      "lessons": [
+        "crypto-001",
+        "crypto-002", 
+        "crypto-003",
+        "security-001"
+      ],
+      "badges": ["crypto-curious", "blockchain-basics", "wallet-setup", "security-aware"]
+    },
+    "intermediate": {
+      "id": "intermediate",
+      "title": "Trading and DeFi Fundamentals", 
+      "description": "Learn about trading and decentralized finance",
+      "difficulty_level": 2,
+      "estimated_time": "4-5 hours",
+      "lessons": [
+        "trading-001",
+        "trading-002",
+        "defi-001",
+        "defi-002",
+        "base-001"
+      ],
+      "badges": ["trading-basics", "defi-explorer", "base-native"]
+    },
+    "advanced": {
+      "id": "advanced",
+      "title": "Advanced Trading Strategies",
+      "description": "Master advanced trading concepts and strategies",
+      "difficulty_level": 3,
+      "estimated_time": "6-8 hours",
+      "lessons": [
+        "trading-003",
+        "trading-004"
+      ],
+      "badges": ["trading-expert", "strategy-master", "risk-manager"]
+    }
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "name": "eaili5-frontend",
+  "version": "1.0.0",
+  "description": "EAILI5 - Explain AI Like I'm Five - Crypto Education Platform Frontend",
+  "private": true,
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  },
+  "dependencies": {
+    "@coinbase/onchainkit": "^0.38.0",
+    "@coinbase/wallet-sdk": "^3.7.0",
+    "@tanstack/react-query": "^5.90.5",
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@wagmi/connectors": "^6.0.1",
+    "@wagmi/core": "^2.22.1",
+    "autoprefixer": "^10.4.0",
+    "axios": "^1.6.0",
+    "class-variance-authority": "^0.7.0",
+    "classnames": "^2.3.0",
+    "clsx": "^2.0.0",
+    "framer-motion": "^10.16.0",
+    "lightweight-charts": "^5.0.9",
+    "lucide-react": "^0.294.0",
+    "postcss": "^8.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.4.0",
+    "react-scripts": "5.0.1",
+    "recharts": "^2.8.0",
+    "tailwindcss": "^3.3.0",
+    "viem": "^2.38.3",
+    "wagmi": "^2.18.1"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^14.3.1",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^29.5.0",
+    "jsdom": "^23.0.0",
+    "typescript": "^5.0.4",
+    "vitest": "^1.0.0",
+    "web-vitals": "^2.1.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --coverage --watchAll=false",
+    "test:vitest": "vitest run",
+    "test:all": "npm run test && npm run test:vitest",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

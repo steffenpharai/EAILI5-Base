@@ -1,0 +1,42 @@
+{
+  "accountAssociation": {
+    "header": "MUST_BE_SIGNED_AT_BASE_DEV",
+    "payload": "MUST_BE_SIGNED_AT_BASE_DEV",
+    "signature": "MUST_BE_SIGNED_AT_BASE_DEV"
+  },
+  "frame": {
+    "version": "1",
+    "name": "EAILI5 - Crypto Education Platform",
+    "iconUrl": "https://base.explainailikeimfive.com/logo192.png",
+    "homeUrl": "https://base.explainailikeimfive.com",
+    "imageUrl": "https://base.explainailikeimfive.com/logo512.png",
+    "splashImageUrl": "https://base.explainailikeimfive.com/logo512.png",
+    "splashBackgroundColor": "#0A0A0F",
+    "webhookUrl": "https://base-api.explainailikeimfive.com/api/webhook"
+  },
+  "miniApp": {
+    "version": "1.0.0",
+    "name": "EAILI5",
+    "description": "AI-powered crypto education through real-time DEX data analysis, risk-free portfolio simulation, and conversational learning on Base",
+    "iconUrl": "https://base.explainailikeimfive.com/logo512.png",
+    "homeUrl": "https://base.explainailikeimfive.com/",
+    "canonicalDomain": "base.explainailikeimfive.com",
+    "requiredChains": [8453, 84532],
+    "tags": ["education", "ai", "defi", "trading", "learning"],
+    "requiredCapabilities": ["wallet", "identity", "eth_sendTransaction"]
+  },
+  "_instructions": {
+    "sign_manifest": "To activate this manifest, you MUST sign it at https://base.dev",
+    "steps": [
+      "1. Visit https://base.dev and sign in with your Base account (stefo0.base.eth)",
+      "2. Navigate to Preview → Account Association",
+      "3. Enter your Mini App domain: base.explainailikeimfive.com",
+      "4. Follow on-screen instructions to sign the message in your wallet",
+      "5. Copy the generated accountAssociation object",
+      "6. Replace the accountAssociation section above with your signed data",
+      "7. Redeploy your application to production"
+    ],
+    "required_for": "Base Mini Apps in Coinbase Wallet and Farcaster clients"
+  }
+}
+

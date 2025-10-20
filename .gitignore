@@ -1,0 +1,136 @@
+# ============================================
+# Environment Variables & Secrets
+# ============================================
+.env
+.env.*
+!.env.example
+!.env.template
+!.env.sample
+
+# API Keys and Secrets (extra safety)
+**/secrets/
+**/secrets.json
+**/secrets.yaml
+**/api-keys.*
+**/credentials.*
+**/*.pem
+**/*.key
+**/*.crt
+**/*.p12
+**/*.pfx
+
+# ============================================
+# Python
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ============================================
+# Node.js / React
+# ============================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+build/
+.cache/
+.parcel-cache/
+
+# ============================================
+# Docker
+# ============================================
+volumes/
+.docker/
+docker-compose.override.yml
+
+# ============================================
+# Database
+# ============================================
+*.db
+*.sqlite
+*.sqlite3
+dump.rdb
+*.sql
+
+# ============================================
+# IDE & Editors
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ============================================
+# Logs
+# ============================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+lerna-debug.log*
+
+# ============================================
+# Testing
+# ============================================
+coverage/
+.nyc_output/
+.pytest_cache/
+
+# ============================================
+# Cloud & Deployment
+# ============================================
+.gcloud/
+.aws/
+.azure/
+*.tfstate
+*.tfstate.*
+
+# ============================================
+# Temporary Files
+# ============================================
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+*.old
+
+# ============================================
+# OS Files
+# ============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ============================================
+# Archive Files
+# ============================================
+*.zip
+*.tar.gz
+*.rar
+*.7z
+

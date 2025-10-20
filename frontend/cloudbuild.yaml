@@ -1,0 +1,87 @@
+# EAILI5 Base Mini App - Frontend Cloud Build Configuration
+# Builds and deploys React frontend to Google Cloud Run
+# Project: eaili5
+# Region: us-central1
+
+steps:
+  # Step 1: Build Docker image with React production build
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/eaili5-base-frontend:$SHORT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/eaili5-base-frontend:latest'
+      - '-f'
+      - 'Dockerfile'
+      - '--target'
+      - 'production'
+      - '--build-arg'
+      - 'REACT_APP_API_URL=https://base-api.explainailikeimfive.com'
+      - '--build-arg'
+      - 'REACT_APP_WS_URL=wss://base-api.explainailikeimfive.com'
+      - '--build-arg'
+      - 'REACT_APP_BASE_RPC_URL=https://mainnet.base.org'
+      - '--build-arg'
+      - 'REACT_APP_BASE_SEPOLIA_RPC_URL=https://sepolia.base.org'
+      - '--build-arg'
+      - 'REACT_APP_WALLET_CONNECT_PROJECT_ID=${_WALLET_CONNECT_PROJECT_ID}'
+      - '.'
+    dir: '.'
+
+  # Step 2: Push versioned image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/eaili5-base-frontend:$SHORT_SHA']
+
+  # Step 3: Push latest tag
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/eaili5-base-frontend:latest']
+
+  # Step 4: Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'eaili5-base-frontend'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/eaili5-base-frontend:$SHORT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--memory'
+      - '512Mi'
+      - '--cpu'
+      - '1'
+      - '--max-instances'
+      - '10'
+      - '--min-instances'
+      - '0'
+      - '--port'
+      - '80'
+      - '--concurrency'
+      - '100'
+
+# Substitutions
+substitutions:
+  _REGION: 'us-central1'
+  _SERVICE_NAME: 'eaili5-base-frontend'
+  _WALLET_CONNECT_PROJECT_ID: ''  # Set via Secret Manager or build trigger
+
+# Images to be pushed to Container Registry
+images:
+  - 'gcr.io/$PROJECT_ID/eaili5-base-frontend:$SHORT_SHA'
+  - 'gcr.io/$PROJECT_ID/eaili5-base-frontend:latest'
+
+# Build options
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'
+  substitutionOption: 'ALLOW_LOOSE'
+  dynamicSubstitutions: true
+
+# Timeout for entire build
+timeout: '1200s'
+

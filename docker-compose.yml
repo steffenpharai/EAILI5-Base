@@ -1,0 +1,158 @@
+# EAILI5 Base Mini App - Docker Compose Configuration
+# Development environment with hot-reload support
+# Run from: apps/base/ directory
+# Commands: docker-compose up -d | docker-compose logs -f | docker-compose down
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: eaili5-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-eali5}
+      POSTGRES_USER: ${POSTGRES_USER:-eali5}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eali5_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - base_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eali5}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - base_network
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: eaili5-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - base_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - base_network
+    restart: unless-stopped
+
+  # Python Backend - Hot-Reload Development Mode
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: eaili5-backend
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-eali5}:${POSTGRES_PASSWORD:-eali5_password}@postgres:5432/${POSTGRES_DB:-eali5}
+      - REDIS_URL=redis://redis:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - BASE_RPC_URL=${BASE_RPC_URL}
+      - ETHERSCAN_API_KEY=${ETHERSCAN_API_KEY}
+      - TAVILY_API_KEY=${TAVILY_API_KEY}
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - WATCHFILES_FORCE_POLLING=true
+    volumes:
+      # Hot-reload: Mount source code
+      - ./backend:/app
+      # Exclude build artifacts for performance
+      - /app/.venv
+      - /app/__pycache__
+      - /app/.pytest_cache
+      - backend_pip_cache:/root/.cache/pip
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - base_network
+    restart: unless-stopped
+
+  # React Frontend - Hot-Reload Development Mode
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: eaili5-frontend
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8000}
+      - REACT_APP_BASE_RPC_URL=${BASE_RPC_URL}
+      - REACT_APP_WS_URL=${REACT_APP_WS_URL:-ws://localhost:8000}
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - WDS_SOCKET_PORT=0
+      - FAST_REFRESH=true
+    volumes:
+      # Hot-reload: Mount source code
+      - ./frontend:/app
+      # Exclude build artifacts for performance
+      - /app/node_modules
+      - /app/build
+      - /app/.cache
+      - frontend_npm_cache:/root/.npm
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - base_network
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy (Production Profile Only)
+  nginx:
+    image: nginx:alpine
+    container_name: eaili5-nginx
+    ports:
+      - "${NGINX_PORT:-80}:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - base_network
+    profiles:
+      - production
+    restart: unless-stopped
+
+volumes:
+  base_postgres_data:
+    name: eaili5_base_postgres_data
+  base_redis_data:
+    name: eaili5_base_redis_data
+  backend_pip_cache:
+    name: eaili5_backend_pip_cache
+  frontend_npm_cache:
+    name: eaili5_frontend_npm_cache
+
+networks:
+  base_network:
+    name: eaili5-base-network
+    driver: bridge
