@@ -8,9 +8,10 @@ EAILI5 Base Mini App follows security best practices for handling sensitive data
 
 If you discover a security vulnerability, please report it responsibly:
 
-- **Email**: [Your security contact email]
-- **GitHub**: Create a private security advisory
+- **Email**: security@explainailikeimfive.com
+- **GitHub**: Create a private security advisory at https://github.com/steffenpharai/EAILI5-Base/security/advisories
 - **Response Time**: We aim to respond within 48 hours
+- **PGP Key**: Available upon request for sensitive communications
 
 **Please do NOT** create public GitHub issues for security vulnerabilities.
 
@@ -171,7 +172,7 @@ Users can request:
 2. **Data deletion**: Permanent removal from our systems
 3. **Data correction**: Update inaccurate information
 
-Contact [privacy email] for data requests.
+Contact privacy@explainailikeimfive.com for data requests.
 
 ---
 
@@ -312,13 +313,14 @@ Before deploying to production:
 ## Contact
 
 For security concerns:
-- Email: [security email]
-- GitHub: [Create private security advisory]
+- Email: security@explainailikeimfive.com
+- GitHub: https://github.com/steffenpharai/EAILI5-Base/security/advisories
 - Response time: 48 hours
 
 For general support:
-- GitHub Issues: [repository]/issues
+- GitHub Issues: https://github.com/steffenpharai/EAILI5-Base/issues
 - Documentation: [README.md](./README.md)
+- Community: GitHub Discussions
 
 ---
 

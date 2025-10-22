@@ -65,7 +65,7 @@ FROM nginx:alpine AS production
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy built files from builder
+# Copy built files from builder (includes .well-known from React build)
 COPY --from=builder /app/build /usr/share/nginx/html
 
 # Install curl for health checks

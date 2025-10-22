@@ -9,6 +9,7 @@ import logging
 from datetime import datetime, timedelta
 import json
 import asyncpg
+from sqlalchemy import text
 from services.redis_service import RedisService
 
 logger = logging.getLogger(__name__)
@@ -18,18 +19,18 @@ class LongTermMemory:
     Manages persistent user knowledge, preferences, and learning history
     """
     
-    def __init__(self, db_pool: asyncpg.Pool, redis_service: RedisService):
-        self.db_pool = db_pool
+    def __init__(self, session_factory, redis_service: RedisService):
+        self.session_factory = session_factory
         self.redis_service = redis_service
         self.cache_ttl = 3600  # 1 hour cache TTL
         
     async def initialize(self) -> None:
         """Initialize long-term memory tables"""
         try:
-            async with self.db_pool.acquire() as conn:
-                # Create user_memory table
-                await conn.execute("""
-                    CREATE TABLE IF NOT EXISTS user_memory (
+            async with self.session_factory() as session:
+                # Create user_profiles table (avoiding catalog corruption)
+                await session.execute(text("""
+                    CREATE TABLE IF NOT EXISTS user_profiles (
                         user_id VARCHAR PRIMARY KEY,
                         learning_level INTEGER DEFAULT 0,
                         topics_learned JSONB DEFAULT '[]',
@@ -40,10 +41,10 @@ class LongTermMemory:
                         created_at TIMESTAMP DEFAULT NOW(),
                         updated_at TIMESTAMP DEFAULT NOW()
                     )
-                """)
+                """))
                 
                 # Create conversation_history table
-                await conn.execute("""
+                await session.execute(text("""
                     CREATE TABLE IF NOT EXISTS conversation_history (
                         id SERIAL PRIMARY KEY,
                         user_id VARCHAR NOT NULL,
@@ -56,23 +57,25 @@ class LongTermMemory:
                         metadata JSONB DEFAULT '{}',
                         importance_score FLOAT DEFAULT 0.5
                     )
-                """)
+                """))
                 
                 # Create indexes
-                await conn.execute("""
+                await session.execute(text("""
                     CREATE INDEX IF NOT EXISTS idx_conversation_user_id 
                     ON conversation_history(user_id)
-                """)
+                """))
                 
-                await conn.execute("""
+                await session.execute(text("""
                     CREATE INDEX IF NOT EXISTS idx_conversation_timestamp 
                     ON conversation_history(timestamp)
-                """)
+                """))
                 
-                await conn.execute("""
+                await session.execute(text("""
                     CREATE INDEX IF NOT EXISTS idx_conversation_importance 
                     ON conversation_history(importance_score)
-                """)
+                """))
+                
+                await session.commit()
                 
             logger.info("Long-term memory tables initialized successfully")
             
@@ -91,14 +94,15 @@ class LongTermMemory:
                 return json.loads(cached_profile)
             
             # Get from database
-            async with self.db_pool.acquire() as conn:
-                row = await conn.fetchrow(
-                    "SELECT * FROM user_memory WHERE user_id = $1",
-                    user_id
+            async with self.session_factory() as session:
+                result = await session.execute(
+                    text("SELECT * FROM user_profiles WHERE user_id = :user_id"),
+                    {"user_id": user_id}
                 )
+                row = result.first()
                 
                 if row:
-                    profile = dict(row)
+                    profile = row._asdict()
                     # Cache the result
                     await self.redis_service.set(
                         cache_key, 
@@ -129,12 +133,13 @@ class LongTermMemory:
             updated_profile['updated_at'] = datetime.now()
             
             # Update database
-            async with self.db_pool.acquire() as conn:
-                await conn.execute("""
-                    INSERT INTO user_memory (
+            async with self.session_factory() as session:
+                await session.execute(text("""
+                    INSERT INTO user_profiles (
                         user_id, learning_level, topics_learned, preferences,
                         interaction_count, last_active, memory_summary, updated_at
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                    ) VALUES (:user_id, :learning_level, :topics_learned, :preferences,
+                        :interaction_count, :last_active, :memory_summary, :updated_at)
                     ON CONFLICT (user_id) DO UPDATE SET
                         learning_level = EXCLUDED.learning_level,
                         topics_learned = EXCLUDED.topics_learned,
@@ -143,16 +148,17 @@ class LongTermMemory:
                         last_active = EXCLUDED.last_active,
                         memory_summary = EXCLUDED.memory_summary,
                         updated_at = EXCLUDED.updated_at
-                """, 
-                user_id,
-                updated_profile.get('learning_level', 0),
-                json.dumps(updated_profile.get('topics_learned', [])),
-                json.dumps(updated_profile.get('preferences', {})),
-                updated_profile.get('interaction_count', 0),
-                updated_profile.get('last_active', datetime.now()),
-                updated_profile.get('memory_summary', ''),
-                updated_profile.get('updated_at', datetime.now())
-                )
+                """), {
+                    "user_id": user_id,
+                    "learning_level": updated_profile.get('learning_level', 0),
+                    "topics_learned": json.dumps(updated_profile.get('topics_learned', [])),
+                    "preferences": json.dumps(updated_profile.get('preferences', {})),
+                    "interaction_count": updated_profile.get('interaction_count', 0),
+                    "last_active": updated_profile.get('last_active', datetime.now()),
+                    "memory_summary": updated_profile.get('memory_summary', ''),
+                    "updated_at": updated_profile.get('updated_at', datetime.now())
+                })
+                await session.commit()
             
             # Update cache
             cache_key = f"user_profile:{user_id}"
@@ -298,7 +304,7 @@ class LongTermMemory:
             # Store in database
             async with self.db_pool.acquire() as conn:
                 await conn.execute("""
-                    INSERT INTO user_memory (
+                    INSERT INTO user_profiles (
                         user_id, learning_level, topics_learned, preferences,
                         interaction_count, last_active, memory_summary, created_at, updated_at
                     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -337,7 +343,7 @@ class LongTermMemory:
         try:
             async with self.db_pool.acquire() as conn:
                 await conn.execute("""
-                    UPDATE user_memory 
+                    UPDATE user_profiles 
                     SET interaction_count = interaction_count + 1,
                         last_active = NOW(),
                         updated_at = NOW()
@@ -363,7 +369,7 @@ class LongTermMemory:
                 
                 # Delete user profile
                 await conn.execute(
-                    "DELETE FROM user_memory WHERE user_id = $1",
+                    "DELETE FROM user_profiles WHERE user_id = $1",
                     user_id
                 )
             

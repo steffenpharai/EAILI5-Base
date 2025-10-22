@@ -24,7 +24,6 @@ export const useWebSocket = (): WebSocketState => {
 
     // Don't create multiple connections - reuse existing if connected
     if (globalWebSocket && globalWebSocket.readyState === WebSocket.OPEN) {
-      console.log('WebSocket already connected, reusing connection');
       return;
     }
 
@@ -40,13 +39,11 @@ export const useWebSocket = (): WebSocketState => {
     ws.onopen = () => {
       globalConnectionState = true;
       setIsConnected(true);
-      console.log('WebSocket connected successfully');
     };
 
     ws.onclose = (event) => {
       globalConnectionState = false;
       setIsConnected(false);
-      console.log('WebSocket disconnected:', event.code, event.reason);
     };
 
     ws.onerror = (error) => {
@@ -58,8 +55,6 @@ export const useWebSocket = (): WebSocketState => {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('WebSocket received message:', data.type, data.content ? data.content.substring(0, 50) + '...' : 'no content');
-        console.log('WebSocket listener count:', messageListeners.size);
         // Notify all listeners
         messageListeners.forEach(listener => {
           try {
@@ -94,12 +89,10 @@ export const useWebSocket = (): WebSocketState => {
   }, []);
 
   const addMessageListener = useCallback((callback: (data: any) => void) => {
-    console.log('Adding WebSocket listener, current count:', messageListeners.size);
     messageListeners.add(callback);
     listenersRef.current.add(callback);
     
     return () => {
-      console.log('Removing WebSocket listener, current count before removal:', messageListeners.size);
       messageListeners.delete(callback);
       listenersRef.current.delete(callback);
     };

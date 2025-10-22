@@ -13,14 +13,15 @@ Complete guide for deploying EAILI5 to Google Cloud Run with custom domain integ
 
 ### Google Cloud Setup
 - Access to `eaili5` GCP project ✓
-- Billing enabled on the project
-- Sufficient permissions (Owner/Editor role)
+- Billing enabled on the project ✓
+- Sufficient permissions (Owner/Editor role) ✓
+- **Current Status**: Production deployment active
 
 ### Base Requirements (for Base Batches submission)
-- Farcaster account with stefo0.base.eth
-- Access to https://base.dev for manifest signing
-- Base Sepolia testnet ETH for testing
-- WalletConnect Project ID
+- Farcaster account with stefo0.base.eth ✓
+- Access to https://base.dev for manifest signing ✓
+- Base Sepolia testnet ETH for testing (pending user action)
+- WalletConnect Project ID ✓ (configured in Secret Manager)
 
 ---
 

@@ -1,41 +1,61 @@
 """
 Database connection and configuration
-Part of the DeCrypt backend services
+Using Cloud SQL Python Connector with IAM authentication
 """
-
-import asyncio
-from typing import Optional
-import logging
-from sqlalchemy import create_engine, text
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
-import asyncpg
 import os
+import logging
+from typing import Optional
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy import text
+from google.cloud.sql.connector import Connector
 
 logger = logging.getLogger(__name__)
 
-# Database configuration
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://eali5:eali5_password@postgres:5432/eali5")
+# Cloud SQL configuration from environment
+INSTANCE_CONNECTION_NAME = os.getenv("INSTANCE_CONNECTION_NAME", "eaili5:us-central1:eaili5-postgres")
+DB_USER = os.getenv("DB_USER", "879892206028-compute@developer.gserviceaccount.com")  # IAM service account email (connector converts to DB username)
+DB_NAME = os.getenv("DB_NAME", "eaili5")
 
-# Create async engine
-async_engine = create_async_engine(
-    DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://"),
-    echo=False,
+# Log configuration
+logger.info(f"Database config: instance={INSTANCE_CONNECTION_NAME}, user={DB_USER}, db={DB_NAME}, auth=IAM")
+
+# Initialize Cloud SQL Connector
+connector = Connector()
+
+async def getconn():
+    """Create database connection using Cloud SQL Connector with IAM auth"""
+    conn = await connector.connect_async(
+        INSTANCE_CONNECTION_NAME,
+        "asyncpg",
+        user=DB_USER,
+        db=DB_NAME,
+        enable_iam_auth=True,  # Enable IAM authentication
+    )
+    return conn
+
+# Create async engine using Cloud SQL Connector
+engine = create_async_engine(
+    "postgresql+asyncpg://",
+    async_creator=getconn,
+    pool_size=5,
+    max_overflow=10,
+    pool_timeout=30,
+    pool_recycle=1800,
     pool_pre_ping=True,
-    pool_recycle=300
+    echo=False,
 )
 
-# Create async session factory
-AsyncSessionLocal = sessionmaker(
-    bind=async_engine,
+# Async session factory
+AsyncSessionLocal = async_sessionmaker(
+    bind=engine,
     class_=AsyncSession,
-    expire_on_commit=False
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False,
 )
 
 async def get_database() -> Optional[AsyncSession]:
-    """
-    Get database session
-    """
+    """Get async database session"""
     try:
         async with AsyncSessionLocal() as session:
             # Test connection
@@ -45,59 +65,8 @@ async def get_database() -> Optional[AsyncSession]:
         logger.error(f"Database connection error: {e}")
         return None
 
-async def get_database_pool() -> Optional[asyncpg.Pool]:
-    """
-    Get database connection pool for enhanced orchestrator
-    """
-    try:
-        # Parse DATABASE_URL to get connection parameters
-        db_url = DATABASE_URL.replace("postgresql://", "").replace("postgresql+asyncpg://", "")
-        if "@" in db_url:
-            user_pass, host_port_db = db_url.split("@")
-            if ":" in user_pass:
-                user, password = user_pass.split(":")
-            else:
-                user, password = user_pass, ""
-            
-            if "/" in host_port_db:
-                host_port, database = host_port_db.split("/")
-                if ":" in host_port:
-                    host, port = host_port.split(":")
-                    port = int(port)
-                else:
-                    host, port = host_port, 5432
-            else:
-                host, port, database = host_port_db, 5432, "decrypt"
-        else:
-            # Default values
-            user, password, host, port, database = "decrypt", "decrypt_password", "localhost", 5432, "decrypt"
-        
-        # Create connection pool
-        pool = await asyncpg.create_pool(
-            host=host,
-            port=port,
-            user=user,
-            password=password,
-            database=database,
-            min_size=1,
-            max_size=10
-        )
-        
-        # Test connection
-        async with pool.acquire() as conn:
-            await conn.execute("SELECT 1")
-        
-        logger.info("Database pool created successfully")
-        return pool
-        
-    except Exception as e:
-        logger.error(f"Database pool creation error: {e}")
-        return None
-
 async def check_database_connection() -> bool:
-    """
-    Check if database connection is working
-    """
+    """Check if database connection is working"""
     try:
         async with AsyncSessionLocal() as session:
             await session.execute(text("SELECT 1"))
@@ -107,11 +76,10 @@ async def check_database_connection() -> bool:
         return False
 
 async def close_database_connections():
-    """
-    Close all database connections
-    """
+    """Close all database connections"""
     try:
-        await async_engine.dispose()
+        await engine.dispose()
+        await connector.close_async()
         logger.info("Database connections closed")
     except Exception as e:
         logger.error(f"Error closing database connections: {e}")

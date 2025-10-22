@@ -31,7 +31,7 @@ const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ token, walletAddress 
   const { theme } = useTheme();
   const { sendMessageStream, isConnected } = useChat();
   const [question, setQuestion] = useState('');
-  const [analysis, setAnalysis] = useState('');
+  const [, setAnalysis] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [sessionToken, setSessionToken] = useState('');
   
@@ -296,36 +296,6 @@ const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ token, walletAddress 
     fontFamily: 'Inter, system-ui, sans-serif',
   };
 
-  const contentStyles: React.CSSProperties = {
-    flex: 1,
-    overflowY: 'auto',
-    padding: '16px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-  };
-
-  const sectionStyles: React.CSSProperties = {
-    marginBottom: '12px',
-  };
-
-  const sectionTitleStyles: React.CSSProperties = {
-    fontSize: '12px',
-    fontWeight: 600,
-    color: theme.text.secondary,
-    marginBottom: '8px',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    fontFamily: 'Inter, system-ui, sans-serif',
-  };
-
-  const analysisTextStyles: React.CSSProperties = {
-    fontSize: '13px',
-    lineHeight: '1.6',
-    color: theme.text.primary,
-    fontFamily: 'Inter, system-ui, sans-serif',
-    whiteSpace: 'pre-wrap',
-  };
 
   const footerStyles: React.CSSProperties = {
     padding: '16px',

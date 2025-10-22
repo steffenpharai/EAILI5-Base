@@ -27,7 +27,8 @@ export const useTokenData = (category: string = 'top15') => {
     try {
       setLoading(true);
       const categoryParam = cat || category;
-      const response = await fetch(`http://localhost:8000/api/tokens?category=${categoryParam}&limit=15`);
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/tokens?category=${categoryParam}&limit=15`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch tokens');

@@ -3,17 +3,27 @@
 [![Base Batches 002](https://img.shields.io/badge/Base%20Batches-002-blue)](https://base-batches-builder-track.devfolio.co/)
 [![Built on Base](https://img.shields.io/badge/Built%20on-Base-blue)](https://base.org)
 [![Deployed on Google Cloud](https://img.shields.io/badge/Deployed%20on-Google%20Cloud-4285F4)](https://cloud.google.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-black)](https://github.com/steffenpharai/EAILI5-Base)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-https://base.explainailikeimfive.com-green)](https://base.explainailikeimfive.com)
 
 AI-powered crypto education platform built on Base L2. Uses multi-agent AI system to teach crypto newcomers through real-time DEX data analysis, risk-free portfolio simulation, and conversational learning.
 
 ## 🏆 Base Batches 002 Submission
 
+**Status**: Ready for Submission ✅  
+**Repository**: [https://github.com/steffenpharai/EAILI5-Base](https://github.com/steffenpharai/EAILI5-Base)  
+**Live App**: [https://base.explainailikeimfive.com](https://base.explainailikeimfive.com)  
+**Team**: stefo0.base.eth
+
+### Submission Requirements Status
+
 - ✅ **Functioning onchain app** - Deployed at https://base.explainailikeimfive.com
-- ✅ **Open-source repository** - Complete source code available
+- ✅ **Open-source repository** - Complete source code at https://github.com/steffenpharai/EAILI5-Base
 - ✅ **Base Sepolia deployment** - Tested on testnet with transaction proof
 - ✅ **Smart Wallet integration** - Coinbase Wallet with smartWalletOnly preference
 - ✅ **Basenames support** - OnchainKit integration for Base naming service
-- ⏳ **Demo video** - 1-minute walkthrough (link TBD)
+- ⏳ **Demo video** - 1-minute walkthrough (see VIDEO_SCRIPT.md)
 - ⏳ **Farcaster manifest** - Signed at base.dev (pending user signature)
 
 ## 🚀 Quick Start

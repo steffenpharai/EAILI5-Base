@@ -40,7 +40,6 @@ const WelcomeLanding: React.FC = () => {
   // Connect WebSocket when session is ready
   useEffect(() => {
     if (isSessionReady && sessionToken) {
-      console.log('WelcomeLanding: Connecting WebSocket with session token:', sessionToken);
       try {
         connect(sessionToken);
       } catch (error) {
@@ -65,7 +64,6 @@ const WelcomeLanding: React.FC = () => {
 
     // Ensure we have a session token
     if (!sessionToken) {
-      console.error('No session token available');
       setMessages(prev => [...prev, {
         id: `error_${Date.now()}`,
         role: 'system',
@@ -77,7 +75,6 @@ const WelcomeLanding: React.FC = () => {
 
     // Prevent multiple simultaneous streams
     if (isStreamingRef.current) {
-      console.log('Stream already in progress, ignoring request');
       return;
     }
     
@@ -108,14 +105,11 @@ const WelcomeLanding: React.FC = () => {
     const aiMessageId = `ai_${Date.now()}`;
 
     try {
-      console.log('Sending message with session token:', sessionToken);
-      console.log('About to call sendMessageStream for message:', inputMessage);
       await sendMessageStream(
         inputMessage,
         'anonymous',
         sessionToken,
         (chunk: string) => {
-          console.log('WelcomeLanding received chunk:', JSON.stringify(chunk), 'Length:', chunk.length);
           setMessages(prev => {
             const updated = [...prev];
             const lastMessage = updated[updated.length - 1];

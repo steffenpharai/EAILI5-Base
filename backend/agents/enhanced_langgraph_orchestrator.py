@@ -62,8 +62,8 @@ class EnhancedLangGraphOrchestrator:
     Enhanced LangGraph orchestrator with full agentic capabilities
     """
     
-    def __init__(self, db_pool, redis_service):
-        self.db_pool = db_pool
+    def __init__(self, session_factory, redis_service):
+        self.session_factory = session_factory
         self.redis_service = redis_service
         
         # Core components
@@ -72,7 +72,7 @@ class EnhancedLangGraphOrchestrator:
         self.tools = {}
         
         # Memory and context
-        self.memory_manager = MemoryManager(db_pool, redis_service)
+        self.memory_manager = MemoryManager(session_factory, redis_service)
         self.context_builder = ContextBuilder(self.memory_manager)
         self.user_state_tracker = UserStateTracker(redis_service)
         

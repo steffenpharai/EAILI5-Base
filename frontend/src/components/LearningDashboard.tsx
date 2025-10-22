@@ -4,7 +4,6 @@ import {
   Trophy, 
   Target, 
   TrendingUp, 
-  Users, 
   Clock, 
   Star,
   ChevronRight,
@@ -17,7 +16,7 @@ import {
   Zap
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
-import { ProButton, ProCard } from './pro';
+import { ProButton } from './pro';
 
 interface LearningDashboardProps {
   userId?: string;
@@ -74,10 +73,6 @@ const LearningDashboard: React.FC<LearningDashboardProps> = ({ userId = 'anonymo
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [progressStats, setProgressStats] = useState<ProgressStats | null>(null);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    fetchLearningData();
-  }, [userId]);
 
   const fetchLearningData = async () => {
     setLoading(true);
@@ -148,6 +143,10 @@ const LearningDashboard: React.FC<LearningDashboardProps> = ({ userId = 'anonymo
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchLearningData();
+  }, [userId]);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {

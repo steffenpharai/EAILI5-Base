@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Brain, Search, BookOpen, TrendingUp, Globe, Loader2, X } from 'lucide-react';
+import { Brain, Loader2, X } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
-import AgentStatus from './AgentStatus';
 
 interface AgentActivity {
   agent: string;
@@ -63,18 +62,6 @@ const AgentActivityPanel: React.FC<AgentActivityPanelProps> = ({
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return theme.accent.blue;
-      case 'completed':
-        return theme.accent.green;
-      case 'error':
-        return theme.accent.red;
-      default:
-        return theme.accent.blue;
-    }
-  };
 
   const containerStyles: React.CSSProperties = {
     position: 'fixed',

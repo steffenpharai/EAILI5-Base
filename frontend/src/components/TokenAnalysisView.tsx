@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, TrendingUp, TrendingDown, Shield, Users, DollarSign, Sparkles } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, Shield, Users, DollarSign } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useSession } from '../contexts/SessionContext';

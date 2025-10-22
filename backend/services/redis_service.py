@@ -35,18 +35,34 @@ class RedisService:
         }
     
     async def initialize(self, connection_url: str):
-        """Initialize Redis connection"""
-        try:
-            self.connection_url = connection_url
-            self.redis_client = redis.from_url(connection_url, decode_responses=True)
-            
-            # Test connection
-            await self.redis_client.ping()
-            logger.info("Redis service initialized successfully")
-            
-        except Exception as e:
-            logger.error(f"Error initializing Redis service: {e}")
-            raise
+        """Initialize Redis connection with retry logic"""
+        max_retries = 5
+        retry_delay = 2
+        
+        for attempt in range(max_retries):
+            try:
+                self.connection_url = connection_url
+                self.redis_client = redis.from_url(
+                    connection_url, 
+                    decode_responses=True,
+                    socket_connect_timeout=30,  # Increased from 10
+                    socket_timeout=30,  # Increased from 10
+                    retry_on_timeout=True,
+                    health_check_interval=30
+                )
+                
+                # Test connection
+                await self.redis_client.ping()
+                logger.info(f"Redis connected successfully to {connection_url}")
+                return True
+                
+            except Exception as e:
+                logger.warning(f"Redis connection attempt {attempt + 1}/{max_retries} failed: {e}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(retry_delay)
+                else:
+                    logger.error(f"Redis connection failed after {max_retries} attempts")
+                    raise
     
     async def get(self, key: str) -> Optional[Any]:
         """Get value from Redis cache"""

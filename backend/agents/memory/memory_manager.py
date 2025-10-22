@@ -21,13 +21,13 @@ class MemoryManager:
     Unified interface for all memory types in the EAILI5 system
     """
     
-    def __init__(self, db_pool, redis_service: RedisService):
-        self.db_pool = db_pool
+    def __init__(self, session_factory, redis_service: RedisService):
+        self.session_factory = session_factory
         self.redis_service = redis_service
         
         # Initialize memory components
         self.short_term = ShortTermMemory()
-        self.long_term = LongTermMemory(db_pool, redis_service)
+        self.long_term = LongTermMemory(session_factory, redis_service)
         self.episodic = EpisodicMemory(redis_service)
         self.procedural = ProceduralMemory(redis_service)
         

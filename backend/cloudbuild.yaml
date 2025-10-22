@@ -9,7 +9,7 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/eaili5-base-backend:$SHORT_SHA'
+      - 'gcr.io/$PROJECT_ID/eaili5-base-backend:$BUILD_ID'
       - '-t'
       - 'gcr.io/$PROJECT_ID/eaili5-base-backend:latest'
       - '-f'
@@ -21,7 +21,7 @@ steps:
 
   # Step 2: Push versioned image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/eaili5-base-backend:$SHORT_SHA']
+    args: ['push', 'gcr.io/$PROJECT_ID/eaili5-base-backend:$BUILD_ID']
 
   # Step 3: Push latest tag
   - name: 'gcr.io/cloud-builders/docker'
@@ -35,18 +35,18 @@ steps:
       - 'deploy'
       - 'eaili5-base-backend'
       - '--image'
-      - 'gcr.io/$PROJECT_ID/eaili5-base-backend:$SHORT_SHA'
+      - 'gcr.io/$PROJECT_ID/eaili5-base-backend:$BUILD_ID'
       - '--region'
       - 'us-central1'
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
+      - '--add-cloudsql-instances'
+      - 'eaili5:us-central1:eaili5-postgres'
       - '--set-secrets'
-      - 'OPENAI_API_KEY=openai-api-key:latest,TAVILY_API_KEY=tavily-api-key:latest,BITQUERY_API_KEY=bitquery-api-key:latest'
+      - 'OPENAI_API_KEY=openai-api-key:latest,TAVILY_API_KEY=tavily-api-key:latest,BITQUERY_API_KEY=bitquery-api-key:latest,REDIS_URL=redis-url:latest'
       - '--set-env-vars'
-      - 'BASE_RPC_URL=https://mainnet.base.org,BASE_SEPOLIA_RPC_URL=https://sepolia.base.org'
-      - '--update-secrets'
-      - 'DATABASE_URL=database-url:latest,REDIS_URL=redis-url:latest'
+      - 'BASE_RPC_URL=https://mainnet.base.org,BASE_SEPOLIA_RPC_URL=https://sepolia.base.org,INSTANCE_CONNECTION_NAME=eaili5:us-central1:eaili5-postgres,DB_USER=879892206028-compute@developer.gserviceaccount.com,DB_NAME=eaili5'
       - '--memory'
       - '2Gi'
       - '--cpu'
@@ -63,6 +63,9 @@ steps:
       - '80'
       - '--cpu-throttling'
       - '--no-cpu-boost'
+      - '--vpc-connector'
+      - 'eaili5-vpc-connector'
+      - '--session-affinity'
 
 # Substitutions can be overridden via gcloud builds submit --substitutions
 substitutions:
@@ -71,7 +74,7 @@ substitutions:
 
 # Images to be pushed to Container Registry
 images:
-  - 'gcr.io/$PROJECT_ID/eaili5-base-backend:$SHORT_SHA'
+  - 'gcr.io/$PROJECT_ID/eaili5-base-backend:$BUILD_ID'
   - 'gcr.io/$PROJECT_ID/eaili5-base-backend:latest'
 
 # Build options

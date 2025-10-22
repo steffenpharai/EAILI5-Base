@@ -23,7 +23,6 @@ from agents.research_agent import ResearchAgent
 from agents.portfolio_agent import PortfolioAdvisorAgent
 from agents.trading_strategy_agent import TradingStrategyAgent
 from agents.web_search_agent import WebSearchAgent
-# Legacy orchestrator removed - using enhanced orchestrator only
 from agents.enhanced_langgraph_orchestrator import EnhancedLangGraphOrchestrator
 from agents.rag_pipeline import RAGPipeline
 from services.token_service import TokenService
@@ -39,17 +38,14 @@ from services.wallet_auth_service import WalletAuthService
 from services.analytics_service import AnalyticsService
 from services.miniapp_service import MiniAppService
 from blockchain.base_client import BaseClient
-from database.connection import get_database, get_database_pool
+from database.connection import check_database_connection
 from models.schemas import ChatMessage, TokenData, PortfolioState
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# DEBUG: Module loaded verification
-print("=== MAIN.PY MODULE LOADED ===")
-print("=== MAIN.PY MODULE LOADED ===")
-print("=== MAIN.PY MODULE LOADED ===")
+# Module loaded verification
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -63,7 +59,14 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://explainailikeimfive.com"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://explainailikeimfive.com",
+        "https://base.explainailikeimfive.com",
+        "https://base-api.explainailikeimfive.com",
+        "https://eaili5-base-frontend-879892206028.us-central1.run.app",
+        "https://eaili5-base-backend-879892206028.us-central1.run.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -104,10 +107,7 @@ portfolio_agent = None
 trading_strategy_agent = None
 web_search_agent = None
 
-# Initialize LangGraph orchestrator (legacy)
-# Legacy orchestrator removed
-
-# Initialize Enhanced LangGraph orchestrator (new agentic system)
+# Initialize Enhanced LangGraph orchestrator
 enhanced_langgraph_orchestrator = None
 
 # Initialize RAG pipeline
@@ -118,7 +118,7 @@ rag_pipeline = RAGPipeline()
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
-    print("=== STARTUP EVENT CALLED ===")
+    logger.info("Application startup initiated")
     logger.info("EAILI5 is waking up...")
     
     try:
@@ -139,7 +139,12 @@ async def startup_event():
         
         # Initialize Session Service with Redis
         global session_service
-        session_service = SessionService(redis_service)
+        try:
+            session_service = SessionService(redis_service)
+            logger.info("Session service initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize session service: {e}")
+            session_service = None
         
         # CoinGecko service doesn't need initialization (no API key required for free tier)
         logger.info("CoinGecko service ready (free tier, no API key required)")
@@ -164,29 +169,20 @@ async def startup_event():
         
         # Initialize coordinator and agents with dependencies
         global coordinator, educator_agent, research_agent, portfolio_agent, trading_strategy_agent, web_search_agent
-        print("=== CREATING AGENTS ===")
+        logger.info("Creating AI agents...")
         try:
             coordinator = CoordinatorAgent(openai_service, tavily_service)
-            print("=== COORDINATOR CREATED ===")
             educator_agent = EducatorAgent(openai_service)
-            print("=== EDUCATOR CREATED ===")
             research_agent = ResearchAgent(openai_service)
-            print("=== RESEARCH CREATED ===")
             portfolio_agent = PortfolioAdvisorAgent(openai_service)
-            print("=== PORTFOLIO CREATED ===")
             trading_strategy_agent = TradingStrategyAgent(openai_service)
-            print("=== TRADING STRATEGY CREATED ===")
             web_search_agent = WebSearchAgent(openai_service, tavily_service)
-            print("=== WEB SEARCH CREATED ===")
-            print(f"=== AGENTS CREATED: educator={educator_agent is not None} ===")
+            logger.info(f"Agents created successfully: educator={educator_agent is not None}")
         except Exception as e:
-            print(f"=== ERROR CREATING AGENTS: {e} ===")
+            logger.error(f"Error creating agents: {e}")
             import traceback
-            print(f"=== TRACEBACK: {traceback.format_exc()} ===")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             raise
-        
-        # Initialize LangGraph orchestrator with agents
-        # Legacy orchestrator removed
         
         # Check if all agents are available
         agent_checks = {
@@ -199,11 +195,11 @@ async def startup_event():
             "openai": openai_service is not None
         }
         
-        print(f"=== AGENT AVAILABILITY CHECK: {agent_checks} ===")
+        logger.info(f"Agent availability check: {agent_checks}")
         
         if not all(agent_checks.values()):
             missing_agents = [name for name, available in agent_checks.items() if not available]
-            print(f"=== ERROR: Missing agents: {missing_agents} ===")
+            logger.error(f"Missing agents: {missing_agents}")
             raise Exception(f"Missing agents: {missing_agents}")
         
         agents = {
@@ -224,32 +220,35 @@ async def startup_event():
             "educational": educational_content_service,
             "progress": progress_tracking_service
         }
-        print(f"=== INITIALIZING ORCHESTRATOR WITH AGENTS: {list(agents.keys())} ===")
+        logger.info(f"Initializing enhanced orchestrator with agents: {list(agents.keys())}")
+        
+        # Initialize Enhanced LangGraph orchestrator
+        global enhanced_langgraph_orchestrator
+        logger.info("Initializing enhanced orchestrator...")
+        
+        # Initialize Enhanced LangGraph Orchestrator with Unix Socket Connection
         try:
-            # Legacy orchestrator removed
+            from database.connection import AsyncSessionLocal, engine
             
-            # Initialize Enhanced LangGraph orchestrator (new agentic system)
-            global enhanced_langgraph_orchestrator
-            print("=== INITIALIZING ENHANCED ORCHESTRATOR ===")
-            try:
-                # Get database pool
-                db_pool = await get_database_pool()
-                if db_pool:
-                    enhanced_langgraph_orchestrator = EnhancedLangGraphOrchestrator(db_pool, redis_service)
-                    await enhanced_langgraph_orchestrator.initialize(agents, tools)
-                    print("=== ENHANCED ORCHESTRATOR INITIALIZED ===")
-                else:
-                    print("=== DATABASE POOL NOT AVAILABLE, SKIPPING ENHANCED ORCHESTRATOR ===")
-                    enhanced_langgraph_orchestrator = None
-            except Exception as e:
-                print(f"=== ERROR INITIALIZING ENHANCED ORCHESTRATOR: {e} ===")
-                # Continue with legacy orchestrator if enhanced fails
-                enhanced_langgraph_orchestrator = None
+            logger.info("=== INITIALIZING ENHANCED ORCHESTRATOR WITH UNIX SOCKET CONNECTION ===")
+            
+            # Test connection before proceeding
+            if await check_database_connection():
+                logger.info("Database connection test successful")
+            else:
+                raise Exception("Database connection test failed")
+            
+            # Initialize orchestrator with async session factory
+            enhanced_langgraph_orchestrator = EnhancedLangGraphOrchestrator(AsyncSessionLocal, redis_service)
+            await enhanced_langgraph_orchestrator.initialize(agents, tools)
+            logger.info("Enhanced orchestrator initialized successfully")
+                
         except Exception as e:
-            print(f"=== ERROR INITIALIZING ORCHESTRATOR: {e} ===")
+            logger.error(f"Enhanced orchestrator initialization failed: {e}")
             import traceback
-            print(f"=== TRACEBACK: {traceback.format_exc()} ===")
-            raise
+            logger.error(f"Full traceback: {traceback.format_exc()}")
+            enhanced_langgraph_orchestrator = None
+            logger.warning("Enhanced orchestrator disabled - database connection failed")
         
         # Initialize RAG pipeline
         # Note: This would need a vector store implementation
@@ -272,6 +271,13 @@ async def startup_event():
         # Don't raise - allow app to start without external services for testing
         logger.warning("Starting in limited mode - some features may not work")
 
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup resources on shutdown"""
+    from database.connection import close_database_connections
+    await close_database_connections()
+    logger.info("Database connections closed")
+
 @app.get("/")
 async def root():
     """Health check endpoint"""
@@ -284,9 +290,8 @@ async def root():
 @app.get("/test-logging")
 async def test_logging():
     """Test endpoint to verify logging works"""
-    print("=== TEST LOGGING ENDPOINT CALLED ===")
-    logger.info("TEST LOGGING: This is an INFO log message")
-    logger.debug("TEST LOGGING: This is a DEBUG log message")
+    logger.info("This is an INFO log message")
+    logger.debug("This is a DEBUG log message")
     return {"message": "Test logging endpoint called", "timestamp": datetime.now().isoformat()}
 
 @app.get("/api/tokens")
@@ -315,28 +320,6 @@ async def get_tokens(category: str = "top15", limit: int = 15):
         logger.error(f"Error fetching tokens: {e}")
         return {"error": "Failed to fetch token data", "status": "error"}
 
-@app.get("/api/tokens/debug")
-async def debug_tokens():
-    """Debug endpoint to check token service status"""
-    try:
-        # Test Etherscan V2 directly
-        etherscan_status = "Not initialized"
-        if etherscan_service.api_key:
-            etherscan_status = f"Initialized with key length: {len(etherscan_service.api_key)}"
-        
-        # Test token service
-        tokens = await token_service.get_trending_tokens(5)
-        
-        return {
-            "etherscan_status": etherscan_status,
-            "etherscan_url": etherscan_service.base_url,
-            "base_chain_id": etherscan_service.base_chain_id,
-            "tokens_found": len(tokens),
-            "sample_tokens": tokens[:2] if tokens else [],
-            "token_service_initialized": token_service.etherscan_service is not None
-        }
-    except Exception as e:
-        return {"error": str(e)}
 
 @app.get("/api/tokens/{token_address}")
 async def get_token_details(token_address: str):
@@ -647,6 +630,10 @@ async def get_connected_wallets():
 async def create_session(request: dict):
     """Create a new session token"""
     try:
+        if session_service is None:
+            logger.error("Session service not initialized")
+            raise HTTPException(status_code=503, detail="Session service unavailable")
+            
         user_id = request.get("user_id", "anonymous")
         wallet_address = request.get("wallet_address")
         
@@ -744,8 +731,18 @@ async def websocket_chat_secure(websocket: WebSocket):
                 # Process message through Enhanced LangGraph orchestrator
                 logger.info(f"Enhanced orchestrator available: {enhanced_langgraph_orchestrator is not None}")
                 
+                # Check if orchestrator is available
+                if not enhanced_langgraph_orchestrator:
+                    await websocket.send_json({
+                        "type": "error",
+                        "message": "AI service is not available. Please try again later.",
+                        "suggestions": ["Try refreshing the page", "Check your internet connection"],
+                        "messageId": message_id
+                    })
+                    continue
+                
                 try:
-                    if streaming_mode and enhanced_langgraph_orchestrator:
+                    if streaming_mode:
                         # STREAMING MODE - Character by character with status updates
                         logger.info("Using streaming mode...")
                         
@@ -766,7 +763,7 @@ async def websocket_chat_secure(websocket: WebSocket):
                         logger.info("Streaming complete")
                     
                     else:
-                        # NON-STREAMING MODE (fallback)
+                        # NON-STREAMING MODE
                         logger.info("Using non-streaming mode...")
                         response = await enhanced_langgraph_orchestrator.process_message(
                             message=user_message,
@@ -1233,25 +1230,17 @@ async def health_check():
         miniapp_status = True  # In-memory service, always available
         
         # Check Enhanced LangGraph orchestrator
-        try:
-            if enhanced_langgraph_orchestrator:
-                orchestrator_connected = True
-            else:
-                orchestrator_connected = False
-        except Exception:
-            orchestrator_connected = False
+        orchestrator_connected = enhanced_langgraph_orchestrator is not None
         
         # Check Redis connection
         try:
-            redis_status = await redis_service.health_check()
-            redis_connected = redis_status.get("status") == "healthy"
+            redis_connected = await redis_service.health_check()
         except Exception:
             redis_connected = False
         
         # Check database connection
         try:
-            db = await get_database()
-            db_connected = True
+            db_connected = await check_database_connection()
         except Exception:
             db_connected = False
         

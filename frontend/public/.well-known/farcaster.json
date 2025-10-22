@@ -1,29 +1,35 @@
 {
   "accountAssociation": {
-    "header": "MUST_BE_SIGNED_AT_BASE_DEV",
-    "payload": "MUST_BE_SIGNED_AT_BASE_DEV",
-    "signature": "MUST_BE_SIGNED_AT_BASE_DEV"
+    "header": "eyJmaWQiOjEzOTQwNjIsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHhEZjk3ODlFRGYwRTcwRDUyMWUwMGMxNDA5QTlDZTQ4QkZlNTRiNDk2In0",
+    "payload": "eyJkb21haW4iOiJiYXNlLmV4cGxhaW5haWxpa2VpbWZpdmUuY29tIn0",
+    "signature": "gzlphYwSXE3pS45vv0eb1w2D8WKHqsl23RBDdAGPhcYyl0k03GXcNiGEaiwz9CW5o71Gi+l1hiAii7zj+q488hw="
   },
-  "frame": {
+  "baseBuilder": {
+    "ownerAddress": "0x7897ee83FE2281d8780483A6E7bFD251d3152cF7"
+  },
+  "miniapp": {
     "version": "1",
-    "name": "EAILI5 - Crypto Education Platform",
-    "iconUrl": "https://base.explainailikeimfive.com/logo192.png",
+    "name": "EAILI5",
     "homeUrl": "https://base.explainailikeimfive.com",
-    "imageUrl": "https://base.explainailikeimfive.com/logo512.png",
+    "iconUrl": "https://base.explainailikeimfive.com/logo192.png",
     "splashImageUrl": "https://base.explainailikeimfive.com/logo512.png",
     "splashBackgroundColor": "#0A0A0F",
-    "webhookUrl": "https://base-api.explainailikeimfive.com/api/webhook"
-  },
-  "miniApp": {
-    "version": "1.0.0",
-    "name": "EAILI5",
+    "webhookUrl": "https://base-api.explainailikeimfive.com/api/webhook",
+    "subtitle": "AI Crypto Education",
     "description": "AI-powered crypto education through real-time DEX data analysis, risk-free portfolio simulation, and conversational learning on Base",
-    "iconUrl": "https://base.explainailikeimfive.com/logo512.png",
-    "homeUrl": "https://base.explainailikeimfive.com/",
-    "canonicalDomain": "base.explainailikeimfive.com",
-    "requiredChains": [8453, 84532],
+    "screenshotUrls": [
+      "https://base.explainailikeimfive.com/screenshot1.png",
+      "https://base.explainailikeimfive.com/screenshot2.png",
+      "https://base.explainailikeimfive.com/screenshot3.png"
+    ],
+    "primaryCategory": "education",
     "tags": ["education", "ai", "defi", "trading", "learning"],
-    "requiredCapabilities": ["wallet", "identity", "eth_sendTransaction"]
+    "heroImageUrl": "https://base.explainailikeimfive.com/logo512.png",
+    "tagline": "Learn crypto with AI",
+    "ogTitle": "EAILI5 - AI Crypto Education",
+    "ogDescription": "AI-powered crypto education through real-time DEX data analysis and risk-free portfolio simulation",
+    "ogImageUrl": "https://base.explainailikeimfive.com/logo512.png",
+    "noindex": true
   },
   "_instructions": {
     "sign_manifest": "To activate this manifest, you MUST sign it at https://base.dev",
