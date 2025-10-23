@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, TrendingUp, TrendingDown, ChevronDown } from 'lucide-react';
+import { Search, TrendingUp, TrendingDown, ChevronDown, X, Menu } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { ProInput } from './pro';
 import { Token } from '../hooks/useTokenData';
@@ -11,6 +11,8 @@ interface TokenListProps {
   loading?: boolean;
   category?: string;
   onCategoryChange?: (category: string) => void;
+  isMobileDrawerOpen?: boolean;
+  onMobileDrawerToggle?: () => void;
 }
 
 const TokenList: React.FC<TokenListProps> = ({ 
@@ -19,11 +21,14 @@ const TokenList: React.FC<TokenListProps> = ({
   onSelectToken,
   loading = false,
   category = 'top15',
-  onCategoryChange
+  onCategoryChange,
+  isMobileDrawerOpen = false,
+  onMobileDrawerToggle
 }) => {
   const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const isMobile = window.innerWidth < 768;
 
   const categories = [
     { id: 'top15', label: 'Top 15', description: 'Most active tokens' },
@@ -40,16 +45,34 @@ const TokenList: React.FC<TokenListProps> = ({
   const containerStyles: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
-    height: '100%',
+    height: isMobile ? 'auto' : '100%',
     background: theme.surface.primary,
-    borderRight: `1px solid ${theme.border.primary}`,
-    width: '280px',
+    borderRight: isMobile ? 'none' : `1px solid ${theme.border.primary}`,
+    width: isMobile ? '100%' : '300px',
     overflow: 'hidden',
+    flexShrink: 0,
+    margin: '0',
+    padding: '0',
+    gap: 0,
+    // Mobile drawer styles
+    ...(isMobile && {
+      position: 'fixed',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      borderRadius: '16px 16px 0 0',
+      maxHeight: '80vh',
+      zIndex: 1000,
+      transform: isMobileDrawerOpen ? 'translateY(0)' : 'translateY(100%)',
+      transition: 'transform 0.3s ease-out',
+      boxShadow: '0 -4px 20px rgba(0,0,0,0.15)',
+    }),
   };
 
   const headerStyles: React.CSSProperties = {
-    padding: '16px',
+    padding: isMobile ? '20px 16px 16px' : '16px',
     borderBottom: `1px solid ${theme.border.primary}`,
+    position: 'relative',
   };
 
   const titleStyles: React.CSSProperties = {
@@ -67,19 +90,24 @@ const TokenList: React.FC<TokenListProps> = ({
   };
 
   const tokenItemStyles = (isSelected: boolean): React.CSSProperties => ({
-    padding: '12px',
+    padding: isMobile ? '18px 16px' : '14px 12px',
     background: isSelected ? theme.surface.secondary : 'transparent',
     border: `1px solid ${isSelected ? theme.border.secondary : 'transparent'}`,
     borderRadius: '6px',
-    marginBottom: '4px',
+    marginBottom: '8px',
     cursor: 'pointer',
     transition: 'all 150ms ease',
+    minHeight: isMobile ? '44px' : 'auto', // Touch-friendly minimum height
+    display: 'flex',
+    alignItems: 'center',
   });
 
   const tokenHeaderStyles: React.CSSProperties = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    width: '100%',
+    gap: '16px', // Space between name and price
     marginBottom: '4px',
   };
 
@@ -88,6 +116,31 @@ const TokenList: React.FC<TokenListProps> = ({
     fontWeight: 600,
     color: theme.text.primary,
     fontFamily: 'Inter, system-ui, sans-serif',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  };
+
+  const tokenNameContainerStyles: React.CSSProperties = {
+    flex: 1,
+    minWidth: 0, // Allow flex shrinking
+    overflow: 'hidden',
+  };
+
+  const tokenNameStyles: React.CSSProperties = {
+    fontSize: '11px',
+    color: theme.text.tertiary,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  };
+
+  const priceContainerStyles: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    minWidth: '90px', // Ensure consistent width for prices
+    textAlign: 'right',
   };
 
   const priceStyles: React.CSSProperties = {
@@ -126,7 +179,49 @@ const TokenList: React.FC<TokenListProps> = ({
   return (
     <div style={containerStyles}>
       <div style={headerStyles}>
-        <div style={titleStyles}>Tokens</div>
+        {/* Mobile drawer handle */}
+        {isMobile && (
+          <div style={{
+            position: 'absolute',
+            top: '8px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '40px',
+            height: '4px',
+            background: theme.border.primary,
+            borderRadius: '2px',
+            marginBottom: '12px',
+          }} />
+        )}
+        
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '12px',
+        }}>
+          <div style={titleStyles}>Tokens</div>
+          {isMobile && onMobileDrawerToggle && (
+            <button
+              onClick={onMobileDrawerToggle}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: theme.text.primary,
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '4px',
+                minWidth: '44px',
+                minHeight: '44px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <X size={20} />
+            </button>
+          )}
+        </div>
         
         {/* Category Dropdown */}
         <div style={{ position: 'relative', marginBottom: '12px' }}>
@@ -244,13 +339,13 @@ const TokenList: React.FC<TokenListProps> = ({
               }}
             >
               <div style={tokenHeaderStyles}>
-                <div>
+                <div style={tokenNameContainerStyles}>
                   <div style={symbolStyles}>{token.symbol}</div>
-                  <div style={{ fontSize: '11px', color: theme.text.tertiary }}>
+                  <div style={tokenNameStyles}>
                     {token.name}
                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
+                <div style={priceContainerStyles}>
                   <div style={priceStyles}>{formatPrice(token)}</div>
                   <div style={changeStyles(token.priceChange24h)}>
                     {token.priceChange24h >= 0 ? (
