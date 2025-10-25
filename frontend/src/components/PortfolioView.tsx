@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, PieChart, Plus, Minus } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation } from '../contexts/NavigationContext';
+import { useAccount } from 'wagmi';
+import { usePortfolio } from '../hooks/usePortfolio';
+import { usePortfolioWebSocket } from '../hooks/usePortfolioWebSocket';
 import { ProButton, ProBadge } from './pro';
 
 interface PortfolioHolding {
@@ -17,9 +20,71 @@ interface PortfolioHolding {
 const PortfolioView: React.FC = () => {
   const { theme } = useTheme();
   const { goHome } = useNavigation();
-  const [holdings] = useState<PortfolioHolding[]>([]);
-  const [totalValue] = useState(100.00);
-  const [totalChange] = useState(0.00);
+  const { address } = useAccount();
+  const { getPortfolio, simulateTrade, getPortfolioPerformance, getTradeHistory, isLoading } = usePortfolio();
+  const { isConnected: wsConnected, portfolioData: wsPortfolioData, error: wsError } = usePortfolioWebSocket(address || 'anonymous');
+  
+  const [holdings, setHoldings] = useState<PortfolioHolding[]>([]);
+  const [totalValue, setTotalValue] = useState(100.00);
+  const [totalChange, setTotalChange] = useState(0.00);
+  const [performance, setPerformance] = useState<any>(null);
+  const [tradeHistory, setTradeHistory] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load portfolio data on component mount
+  useEffect(() => {
+    const loadPortfolioData = async () => {
+      if (!address) return;
+      
+      try {
+        setError(null);
+        
+        // Load portfolio holdings
+        const portfolioData = await getPortfolio(address);
+        if (portfolioData.holdings) {
+          setHoldings(portfolioData.holdings);
+          setTotalValue(portfolioData.totalValue || 100.00);
+        }
+        
+        // Load performance data
+        const performanceData = await getPortfolioPerformance(address);
+        if (performanceData) {
+          setPerformance(performanceData);
+          setTotalChange(performanceData.totalChange24h || 0.00);
+        }
+        
+        // Load trade history
+        const historyData = await getTradeHistory(address, 20);
+        if (historyData) {
+          setTradeHistory(historyData);
+        }
+        
+      } catch (err) {
+        console.error('Error loading portfolio data:', err);
+        setError('Failed to load portfolio data');
+      }
+    };
+
+    loadPortfolioData();
+  }, [address, getPortfolio, getPortfolioPerformance, getTradeHistory]);
+
+  // Handle real-time portfolio updates from WebSocket
+  useEffect(() => {
+    if (wsPortfolioData) {
+      console.log('Real-time portfolio update received:', wsPortfolioData);
+      
+      // Update portfolio data with real-time updates
+      if (wsPortfolioData.holdings) {
+        setHoldings(wsPortfolioData.holdings);
+      }
+      if (wsPortfolioData.totalValue !== undefined) {
+        setTotalValue(wsPortfolioData.totalValue);
+      }
+      if (wsPortfolioData.totalChange24h !== undefined) {
+        setTotalChange(wsPortfolioData.totalChange24h);
+      }
+    }
+  }, [wsPortfolioData]);
 
   const containerStyles: React.CSSProperties = {
     display: 'flex',
@@ -186,29 +251,86 @@ const PortfolioView: React.FC = () => {
 
       {/* Content */}
       <div style={contentStyles}>
-        {/* Portfolio Header */}
-        <div style={portfolioHeaderStyles}>
-          <div style={balanceStyles}>
-            <div style={balanceValueStyles}>
-              <DollarSign className="w-8 h-8" />
-              ${totalValue.toFixed(2)}
-            </div>
-            <div style={changeStyles}>
-              {totalChange >= 0 ? (
-                <TrendingUp className="w-4 h-4" />
-              ) : (
-                <TrendingDown className="w-4 h-4" />
-              )}
-              {totalChange >= 0 ? '+' : ''}{totalChange.toFixed(2)}% (24h)
-            </div>
+        {/* Error State */}
+        {error && (
+          <div style={{
+            background: theme.surface.secondary,
+            border: `1px solid ${theme.accent.red}`,
+            borderRadius: '8px',
+            padding: '16px',
+            marginBottom: '20px',
+            color: theme.accent.red
+          }}>
+            {error}
           </div>
-          <ProBadge variant={totalChange >= 0 ? 'bullish' : 'bearish'}>
-            {totalChange >= 0 ? 'Gaining' : 'Losing'}
-          </ProBadge>
-        </div>
+        )}
+
+        {/* WebSocket Status */}
+        {wsError && (
+          <div style={{
+            background: theme.surface.secondary,
+            border: `1px solid ${theme.accent.orange}`,
+            borderRadius: '8px',
+            padding: '12px',
+            marginBottom: '20px',
+            color: theme.accent.orange,
+            fontSize: '14px'
+          }}>
+            ⚠️ Real-time updates unavailable: {wsError}
+          </div>
+        )}
+        
+        {wsConnected && (
+          <div style={{
+            background: theme.surface.secondary,
+            border: `1px solid ${theme.accent.green}`,
+            borderRadius: '8px',
+            padding: '12px',
+            marginBottom: '20px',
+            color: theme.accent.green,
+            fontSize: '14px'
+          }}>
+            ✅ Real-time portfolio updates active
+          </div>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <div style={{
+            textAlign: 'center',
+            padding: '40px',
+            color: theme.text.secondary
+          }}>
+            Loading portfolio data...
+          </div>
+        )}
+
+        {/* Portfolio Header */}
+        {!isLoading && (
+          <div style={portfolioHeaderStyles}>
+            <div style={balanceStyles}>
+              <div style={balanceValueStyles}>
+                <DollarSign className="w-8 h-8" />
+                ${totalValue.toFixed(2)}
+              </div>
+              <div style={changeStyles}>
+                {totalChange >= 0 ? (
+                  <TrendingUp className="w-4 h-4" />
+                ) : (
+                  <TrendingDown className="w-4 h-4" />
+                )}
+                {totalChange >= 0 ? '+' : ''}{totalChange.toFixed(2)}% (24h)
+              </div>
+            </div>
+            <ProBadge variant={totalChange >= 0 ? 'bullish' : 'bearish'}>
+              {totalChange >= 0 ? 'Gaining' : 'Losing'}
+            </ProBadge>
+          </div>
+        )}
 
         {/* Stats Grid */}
-        <div style={statsGridStyles}>
+        {!isLoading && (
+          <div style={statsGridStyles}>
           <div style={statCardStyles}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
               <DollarSign className="w-5 h-5" style={{ color: theme.accent.blue }} />
@@ -249,9 +371,11 @@ const PortfolioView: React.FC = () => {
             </div>
           </div>
         </div>
+        )}
 
         {/* Holdings Section */}
-        <div style={holdingsSectionStyles}>
+        {!isLoading && (
+          <div style={holdingsSectionStyles}>
           <h2 style={sectionTitleStyles}>
             <PieChart className="w-6 h-6" />
             Your Holdings
@@ -308,9 +432,11 @@ const PortfolioView: React.FC = () => {
             </div>
           )}
         </div>
+        )}
 
         {/* Quick Actions */}
-        <div style={{ marginTop: '32px' }}>
+        {!isLoading && (
+          <div style={{ marginTop: '32px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 600, color: theme.text.primary, marginBottom: '16px' }}>
             Quick Actions
           </h3>
@@ -329,6 +455,7 @@ const PortfolioView: React.FC = () => {
             </ProButton>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ import { Toaster } from 'react-hot-toast';
 import { OnchainKitProvider } from '@coinbase/onchainkit';
 import App from './App';
 import { config } from './wagmi';
-import { initializeMiniApp } from './utils/minikit';
+import { initializeMiniApp, signalAppReady } from './utils/minikit';
 import { base } from 'wagmi/chains';
 
 const queryClient = new QueryClient();
@@ -64,3 +64,9 @@ root.render(
     </WagmiProvider>
   </React.StrictMode>
 );
+
+// Signal to Farcaster that the app is ready after React renders
+// This dismisses the splash screen in Farcaster Mini Apps
+setTimeout(() => {
+  signalAppReady();
+}, 100);

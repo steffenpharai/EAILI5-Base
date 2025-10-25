@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, TrendingUp, TrendingDown, Shield, Users, DollarSign } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, Shield, Users, DollarSign, Brain } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useSession } from '../contexts/SessionContext';
@@ -7,7 +7,8 @@ import { useChat } from '../hooks/useChat';
 import { ProButton, ProBadge } from './pro';
 import TradingChart from './TradingChart';
 import SuggestionChips from './SuggestionChips';
-import TokenSentiment from './TokenSentiment';
+import TokenSentiment from './EnhancedTokenSentiment';
+// import FeedbackWidget from './FeedbackWidget'; // Removed - using FeedbackBar instead
 import { Token } from '../hooks/useTokenData';
 
 // Simple markdown renderer for basic formatting
@@ -21,6 +22,7 @@ const renderMarkdown = (text: string): string => {
 
 interface TokenAnalysisViewProps {
   token: Token | null;
+  onAIMessageGenerated?: (messageId: string) => void;
 }
 
 interface Message {
@@ -31,7 +33,7 @@ interface Message {
   agent?: string;
 }
 
-const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token }) => {
+const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessageGenerated }) => {
   const { theme } = useTheme();
   const { goHome } = useNavigation();
   const { sessionToken, isSessionReady } = useSession();
@@ -387,28 +389,36 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token }) => {
     flex: 1,
     display: 'flex',
     overflow: 'hidden',
+    marginBottom: '40px', // Reduced space for footer
+    width: '100%', // Ensure full width
+    minWidth: 0, // Allow flex items to shrink
   };
 
   const leftSectionStyles: React.CSSProperties = {
-    flex: '0 0 60%',
+    flex: '0 0 65%',  // Increased back to give more space to chart
     display: 'flex',
     flexDirection: 'column',
-    padding: '20px',
+    padding: '12px',  // Reduced padding
+    paddingBottom: '80px', // Reduced footer spacing
     borderRight: `1px solid ${theme.border.primary}`,
   };
 
   const rightSectionStyles: React.CSSProperties = {
-    flex: '0 0 40%',
+    flex: '0 0 35%',  // Reduced to make more compact
     display: 'flex',
     flexDirection: 'column',
-    padding: '20px',
+    padding: '12px',  // Reduced padding
+    paddingBottom: '80px', // Reduced footer spacing
+    minWidth: '250px', // Smaller minimum width
+    overflow: 'visible', // Allow content to be visible
+    width: '100%', // Ensure full width
   };
 
   const statsGridStyles: React.CSSProperties = {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: '12px',
-    marginBottom: '20px',
+    gap: '8px',  // Reduced gap
+    marginBottom: '16px',  // Reduced margin
   };
 
   const statCardStyles: React.CSSProperties = {
@@ -463,31 +473,224 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token }) => {
   });
 
   const messageBubbleStyles = (role: string): React.CSSProperties => ({
-    maxWidth: '80%',
-    padding: '8px 12px',
+    maxWidth: window.innerWidth < 768 ? '90%' : '80%',
+    padding: window.innerWidth < 768 ? '16px 20px' : '12px 16px', // Better mobile padding
     borderRadius: role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
     background: role === 'user' ? theme.accent.blue : theme.surface.primary,
     color: role === 'user' ? theme.text.inverted : theme.text.primary,
-    fontSize: '14px',
-    lineHeight: 1.4,
+    fontSize: window.innerWidth < 768 ? '16px' : '14px', // 16px prevents iOS zoom
+    lineHeight: 1.5, // Better readability
+    minHeight: window.innerWidth < 768 ? '44px' : 'auto', // Touch-friendly minimum height
+    // Enhanced mobile animations
+    animation: window.innerWidth < 768 ? 'slideInUp 0.3s ease-out' : 'none',
+    // Better touch targets
+    touchAction: 'manipulation',
+    WebkitTapHighlightColor: 'transparent',
+    // Improved spacing
+    marginBottom: window.innerWidth < 768 ? '16px' : '12px',
+    // Better text wrapping
+    wordWrap: 'break-word',
+    overflowWrap: 'break-word',
   });
 
   const inputContainerStyles: React.CSSProperties = {
     display: 'flex',
     gap: '8px',
     alignItems: 'center',
+    // Mobile optimizations
+    ...(window.innerWidth < 768 && {
+      position: 'fixed',
+      bottom: '0',
+      left: '0',
+      right: '0',
+      padding: '16px',
+      background: theme.surface.primary,
+      borderTop: `1px solid ${theme.border.primary}`,
+      zIndex: 1000,
+      // Safe area for notched devices
+      paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+    }),
   };
 
-  if (!token) {
-    return (
+  // Always show full dashboard - removed simplified token-optional view
+  // if (!token) {
+  //   return (
       <div style={containerStyles}>
-        <div style={{ padding: '40px', textAlign: 'center', color: theme.text.tertiary }}>
-          <h2>No token selected</h2>
-          <p>Select a token from the sidebar to view its analysis.</p>
+        {/* Simplified header for general crypto learning */}
+        <div style={headerStyles}>
+          <button style={backButtonStyles} onClick={goHome}>
+            <ArrowLeft className="w-4 h-4" />
+            Back to Home
+          </button>
+          
+          <div style={tokenInfoStyles}>
+            <div>
+              <h2 style={{ fontSize: '24px', fontWeight: 700, margin: 0, color: theme.text.primary }}>
+                Crypto Learning Assistant
+              </h2>
+              <p style={{ fontSize: '14px', color: theme.text.secondary, margin: '4px 0 0 0' }}>
+                Ask me anything about cryptocurrency
+              </p>
+            </div>
+            <ProBadge variant="bullish">
+              <Brain className="w-3 h-3" />
+              AI Powered
+            </ProBadge>
+          </div>
         </div>
-      </div>
-    );
-  }
+
+        {/* Main Content - Mobile-first layout */}
+        <div style={{
+          ...mainContentStyles,
+          flexDirection: window.innerWidth < 768 ? 'column' : 'row',
+        }}>
+          {/* Left Section - General crypto info or chart placeholder */}
+          <div style={{
+            ...leftSectionStyles,
+            flex: window.innerWidth < 768 ? 'none' : '0 0 60%',
+            padding: window.innerWidth < 768 ? '16px' : '20px',
+            borderRight: window.innerWidth < 768 ? 'none' : `1px solid ${theme.border.primary}`,
+            borderBottom: window.innerWidth < 768 ? `1px solid ${theme.border.primary}` : 'none',
+          }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              textAlign: 'center',
+              color: theme.text.tertiary,
+              padding: '20px',
+            }}>
+              <Brain className="w-16 h-16 mb-4" style={{ color: theme.accent.blue }} />
+              <h3 style={{ fontSize: '18px', marginBottom: '8px', color: theme.text.primary }}>
+                General Crypto Learning
+              </h3>
+              <p style={{ fontSize: '14px', lineHeight: '1.5', marginBottom: '16px' }}>
+                Ask me about any cryptocurrency topic, blockchain technology, or trading concepts.
+              </p>
+              <ProButton
+                variant="primary"
+                size="lg"
+                onClick={() => {
+                  setInputMessage("Explain cryptocurrency to me like I'm 5 years old");
+                  setTimeout(() => handleSendMessage(), 100);
+                }}
+                disabled={isStreaming || isAnalyzing || !isConnected}
+                className="flex items-center gap-2"
+              >
+                <Brain className="w-4 h-4" />
+                Start Learning
+              </ProButton>
+            </div>
+          </div>
+
+          {/* Right Section - Chat Interface */}
+          <div style={{
+            ...rightSectionStyles,
+            flex: window.innerWidth < 768 ? '1' : '0 0 40%',
+            padding: window.innerWidth < 768 ? '16px' : '20px',
+          }}>
+            {/* General crypto stats or info */}
+            <div style={statsGridStyles}>
+              <div style={statCardStyles}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <Brain className="w-4 h-4" style={{ color: theme.accent.blue }} />
+                  <span style={{ fontSize: '12px', color: theme.text.secondary }}>AI Learning</span>
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: 700, color: theme.text.primary }}>
+                  Always On
+                </div>
+              </div>
+
+              <div style={statCardStyles}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <TrendingUp className="w-4 h-4" style={{ color: theme.accent.green }} />
+                  <span style={{ fontSize: '12px', color: theme.text.secondary }}>Topics</span>
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: 700, color: theme.text.primary }}>
+                  Unlimited
+                </div>
+              </div>
+            </div>
+
+            {/* Chat Interface */}
+            <div style={chatAreaStyles}>
+              <div style={messagesAreaStyles}>
+                {messages.map((message) => (
+                  <div key={message.id} style={messageStyles(message.role)}>
+                    <div style={messageBubbleStyles(message.role)}>
+                      {message.role === 'assistant' ? (
+                        <div 
+                          dangerouslySetInnerHTML={{ 
+                            __html: renderMarkdown(message.content) 
+                          }} 
+                        />
+                      ) : (
+                        message.content
+                      )}
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Suggestion Chips for general topics */}
+                {suggestions.length > 0 && (
+                  <SuggestionChips 
+                    suggestions={suggestions}
+                    onSuggestionClick={handleSuggestionClick}
+                  />
+                )}
+              </div>
+
+              <div style={inputContainerStyles}>
+                <textarea
+                  value={inputMessage}
+                  onChange={(e) => {
+                    setInputMessage(e.target.value);
+                    // Auto-resize
+                    e.target.style.height = 'auto';
+                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                  }}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Ask me anything about crypto..."
+                  disabled={!isConnected || isStreaming || isAnalyzing}
+                  style={{
+                    flex: 1,
+                    padding: '12px 16px',
+                    border: `1px solid ${theme.border.primary}`,
+                    borderRadius: '8px',
+                    background: theme.surface.primary,
+                    color: theme.text.primary,
+                    fontSize: '16px',
+                    fontFamily: 'Inter, system-ui, sans-serif',
+                    minHeight: '44px',
+                    maxHeight: '120px',
+                    resize: 'none',
+                    overflow: 'hidden',
+                    lineHeight: '1.5',
+                    touchAction: 'manipulation',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                  rows={1}
+                />
+                <ProButton
+                  onClick={handleSendMessage}
+                  disabled={!inputMessage.trim() || isStreaming || isAnalyzing || !isConnected}
+                  size="sm"
+                  style={{
+                    minHeight: '44px',
+                    minWidth: '44px',
+                  }}
+                >
+                  {isAnalyzing ? 'Analyzing...' : isStreaming ? 'Generating...' : 'Send'}
+                </ProButton>
+              </div>
+            </div>
+          </div>
+        </div>
+  //    </div>
+  //  );
+  // }
 
   return (
     <div style={containerStyles}>
@@ -501,15 +704,22 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token }) => {
         <div style={tokenInfoStyles}>
           <div>
             <h2 style={{ fontSize: '24px', fontWeight: 700, margin: 0, color: theme.text.primary }}>
-              {token.name} ({token.symbol})
+              {token ? `${token.name} (${token.symbol})` : 'Crypto Learning Assistant'}
             </h2>
             <p style={{ fontSize: '14px', color: theme.text.secondary, margin: '4px 0 0 0' }}>
-              Base • Ethereum L2
+              {token ? 'Base • Ethereum L2' : 'Ask me anything about cryptocurrency'}
             </p>
           </div>
-          <ProBadge variant={token.priceChange24h >= 0 ? 'bullish' : 'bearish'}>
-            {token.priceChange24h >= 0 ? '+' : ''}{token.priceChange24h.toFixed(2)}%
-          </ProBadge>
+          {token ? (
+            <ProBadge variant={token.priceChange24h >= 0 ? 'bullish' : 'bearish'}>
+              {token.priceChange24h >= 0 ? '+' : ''}{token.priceChange24h.toFixed(2)}%
+            </ProBadge>
+          ) : (
+            <ProBadge variant="bullish">
+              <Brain className="w-3 h-3" />
+              AI Powered
+            </ProBadge>
+          )}
         </div>
       </div>
 
@@ -518,12 +728,10 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token }) => {
         {/* Left Section - Chart */}
         <div style={leftSectionStyles}>
           <TradingChart token={token} />
-          {token && (
-            <TokenSentiment 
-              tokenAddress={token.address} 
-              tokenSymbol={token.symbol} 
-            />
-          )}
+          <TokenSentiment 
+            tokenAddress={token?.address || ''} 
+            tokenSymbol={token?.symbol || 'Crypto'} 
+          />
         </div>
 
         {/* Right Section - Stats & Chat */}
@@ -536,7 +744,7 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token }) => {
                 <span style={{ fontSize: '12px', color: theme.text.secondary }}>Price</span>
               </div>
               <div style={{ fontSize: '18px', fontWeight: 700, color: theme.text.primary }}>
-                {formatCurrency(token.price)}
+                {token ? formatCurrency(token.price) : 'N/A'}
               </div>
             </div>
 
@@ -546,7 +754,7 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token }) => {
                 <span style={{ fontSize: '12px', color: theme.text.secondary }}>Volume 24h</span>
               </div>
               <div style={{ fontSize: '18px', fontWeight: 700, color: theme.text.primary }}>
-                {formatCurrency(token.volume24h)}
+                {token ? formatCurrency(token.volume24h) : 'N/A'}
               </div>
             </div>
 
@@ -556,17 +764,17 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token }) => {
                 <span style={{ fontSize: '12px', color: theme.text.secondary }}>Market Cap</span>
               </div>
               <div style={{ fontSize: '18px', fontWeight: 700, color: theme.text.primary }}>
-                {formatCurrency(token.marketCap)}
+                {token ? formatCurrency(token.marketCap) : 'N/A'}
               </div>
             </div>
 
             <div style={statCardStyles}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <Shield className="w-4 h-4" style={{ color: getSafetyColor(token.safetyScore) }} />
+                <Shield className="w-4 h-4" style={{ color: token ? getSafetyColor(token.safetyScore) : theme.text.tertiary }} />
                 <span style={{ fontSize: '12px', color: theme.text.secondary }}>Safety Score</span>
               </div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: getSafetyColor(token.safetyScore) }}>
-                {token.safetyScore}/100
+              <div style={{ fontSize: '18px', fontWeight: 700, color: token ? getSafetyColor(token.safetyScore) : theme.text.tertiary }}>
+                {token ? `${token.safetyScore}/100` : 'N/A'}
               </div>
             </div>
 
@@ -576,7 +784,7 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token }) => {
                 <span style={{ fontSize: '12px', color: theme.text.secondary }}>Holders</span>
               </div>
               <div style={{ fontSize: '18px', fontWeight: 700, color: theme.text.primary }}>
-                {formatNumber(token.holders)}
+                {token ? formatNumber(token.holders) : 'N/A'}
               </div>
             </div>
 
@@ -586,7 +794,7 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token }) => {
                 <span style={{ fontSize: '12px', color: theme.text.secondary }}>Liquidity</span>
               </div>
               <div style={{ fontSize: '18px', fontWeight: 700, color: theme.text.primary }}>
-                {formatCurrency(token.liquidity)}
+                {token ? formatCurrency(token.liquidity) : 'N/A'}
               </div>
             </div>
           </div>
@@ -600,7 +808,7 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token }) => {
               disabled={isStreaming || !sessionToken}
               className="flex items-center gap-2"
             >
-              {isStreaming ? 'Analyzing...' : `Analyze ${token.symbol}`}
+              {isStreaming ? 'Analyzing...' : token ? `Analyze ${token.symbol}` : 'Analyze Crypto'}
             </ProButton>
           </div>
 
@@ -653,6 +861,8 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token }) => {
                           message.content
                         )}
                       </div>
+                      
+                      {/* FeedbackWidget removed - now handled by FeedbackBar */}
                     </div>
                   ))}
                   
@@ -666,27 +876,45 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token }) => {
                 </div>
 
                 <div style={inputContainerStyles}>
-                  <input
-                    type="text"
+                  <textarea
                     value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
+                    onChange={(e) => {
+                      setInputMessage(e.target.value);
+                      // Auto-resize
+                      e.target.style.height = 'auto';
+                      e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                    }}
                     onKeyPress={handleKeyPress}
-                    placeholder={`Ask about ${token.symbol}...`}
+                    placeholder={token ? `Ask about ${token.symbol}...` : 'Ask about any cryptocurrency...'}
                     disabled={!isConnected || isStreaming || isAnalyzing}
                     style={{
                       flex: 1,
-                      padding: '8px 12px',
+                      padding: '12px 16px', // Touch-friendly padding
                       border: `1px solid ${theme.border.primary}`,
                       borderRadius: '8px',
                       background: theme.surface.primary,
                       color: theme.text.primary,
-                      fontSize: '14px',
+                      fontSize: '16px', // Prevent iOS zoom
+                      fontFamily: 'Inter, system-ui, sans-serif',
+                      minHeight: '44px', // Minimum touch target
+                      maxHeight: '120px', // Max height before scroll
+                      resize: 'none',
+                      overflow: 'hidden',
+                      lineHeight: '1.5',
+                      // Enhanced mobile support
+                      touchAction: 'manipulation',
+                      WebkitTapHighlightColor: 'transparent',
                     }}
+                    rows={1}
                   />
                   <ProButton
                     onClick={handleSendMessage}
                     disabled={!inputMessage.trim() || isStreaming || isAnalyzing || !isConnected}
                     size="sm"
+                    style={{
+                      minHeight: '44px',
+                      minWidth: '44px',
+                    }}
                   >
                     {isAnalyzing ? 'Analyzing...' : isStreaming ? 'Generating...' : 'Send'}
                   </ProButton>
@@ -696,14 +924,14 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token }) => {
 
             {activeTab === 'learn' && (
               <div style={{ padding: '20px', textAlign: 'center', color: theme.text.secondary }}>
-                <h3>Learning content about {token.symbol}</h3>
+                <h3>Learning content about {token ? token.symbol : 'cryptocurrency'}</h3>
                 <p>Educational content coming soon...</p>
               </div>
             )}
 
             {activeTab === 'insights' && (
               <div style={{ padding: '20px', textAlign: 'center', color: theme.text.secondary }}>
-                <h3>AI Insights for {token.symbol}</h3>
+                <h3>AI Insights for {token ? token.symbol : 'cryptocurrency'}</h3>
                 <p>Advanced analysis coming soon...</p>
               </div>
             )}

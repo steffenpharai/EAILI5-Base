@@ -19,6 +19,7 @@ import {
   Identity,
   EthBalance,
 } from '@coinbase/onchainkit/identity';
+import { useWalletTracking } from '../hooks/useWalletTracking';
 
 /**
  * Base-Recommended Wallet Button with Basenames Integration
@@ -27,6 +28,9 @@ import {
  * Styled for EAILI5's minimalist design language
  */
 export function WalletButton() {
+  // Track wallet connect/disconnect events with backend
+  useWalletTracking();
+
   return (
     <div style={{
       fontFamily: 'Inter, system-ui, sans-serif'
@@ -80,46 +84,142 @@ export function WalletButton() {
 
 /**
  * Compact Wallet Button for TopBar/Header
- * Styled to match EAILI5 minimalist, line-driven design
+ * Uses OnchainKit components as designed with professional styling
  */
 export function CompactWalletButton() {
+  // Track wallet connect/disconnect events with backend
+  useWalletTracking();
+
   return (
     <div style={{ 
-      fontSize: '12px',
-      fontFamily: 'JetBrains Mono, monospace'
+      fontFamily: 'Inter, system-ui, sans-serif',
+      fontSize: '14px'
     }}>
       <style>{`
-        .eaili5-compact-wallet button {
+        /* Target OnchainKit's actual CSS classes */
+        [data-rk] button {
+          font-family: 'Inter, system-ui, sans-serif' !important;
+          font-weight: 500 !important;
+        }
+        
+        /* Connect Wallet Button */
+        [data-rk] button[data-testid="connect-wallet-button"] {
           padding: 6px 12px !important;
-          font-size: 12px !important;
-          font-family: 'JetBrains Mono', monospace !important;
-          background: transparent !important;
+          font-size: 13px !important;
+          background: rgba(59, 130, 246, 0.2) !important;
+          border: 1px solid rgba(59, 130, 246, 0.5) !important;
+          border-radius: 6px !important;
+          color: #ffffff !important;
+          min-height: 36px !important;
+          transition: all 200ms ease !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          gap: 8px !important;
+        }
+        
+        [data-rk] button[data-testid="connect-wallet-button"]:hover {
+          border-color: rgba(59, 130, 246, 0.8) !important;
+          background: rgba(59, 130, 246, 0.3) !important;
+          transform: translateY(-1px) !important;
+          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+        }
+        
+        /* Wallet Dropdown */
+        [data-rk] [role="menu"] {
+          z-index: 1000 !important;
+          background: rgba(20, 20, 20, 0.95) !important;
+          backdrop-filter: blur(10px) !important;
           border: 1px solid rgba(59, 130, 246, 0.3) !important;
-          border-radius: 4px !important;
-          color: rgba(255, 255, 255, 0.9) !important;
-          min-height: 32px !important;
-          transition: all 0.2s ease !important;
+          border-radius: 8px !important;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+          padding: 16px !important;
+          min-width: 280px !important;
         }
-        .eaili5-compact-wallet button:hover {
-          border-color: rgba(59, 130, 246, 0.6) !important;
-          background: rgba(59, 130, 246, 0.05) !important;
+        
+        /* Identity Section */
+        [data-rk] [data-testid="identity"] {
+          padding-bottom: 16px !important;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+          margin-bottom: 16px !important;
         }
-        .eaili5-compact-wallet span {
-          font-family: 'JetBrains Mono', monospace !important;
+        
+        [data-rk] [data-testid="identity"] * {
+          font-family: 'Inter, system-ui, sans-serif' !important;
+        }
+        
+        [data-rk] [data-testid="identity"] [data-testid="name"] {
+          font-size: 16px !important;
+          font-weight: 600 !important;
+          color: #ffffff !important;
+        }
+        
+        [data-rk] [data-testid="identity"] [data-testid="address"] {
           font-size: 12px !important;
+          color: rgba(255, 255, 255, 0.7) !important;
+        }
+        
+        [data-rk] [data-testid="identity"] [data-testid="balance"] {
+          font-size: 14px !important;
+          font-weight: 500 !important;
+          color: rgba(255, 255, 255, 0.9) !important;
+        }
+        
+        /* Disconnect Button */
+        [data-rk] [data-testid="disconnect-button"] {
+          color: #ff6b6b !important;
+          font-weight: 600 !important;
+          border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+          margin-top: 8px !important;
+          padding-top: 16px !important;
+        }
+        
+        [data-rk] [data-testid="disconnect-button"]:hover {
+          background: rgba(255, 107, 107, 0.1) !important;
+          color: #ff5252 !important;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+          [data-rk] button[data-testid="connect-wallet-button"] {
+            padding: 8px 12px !important;
+            font-size: 12px !important;
+            min-height: 44px !important;
+            min-width: 44px !important;
+          }
+          
+          /* Hide name on very small screens, show only avatar */
+          @media (max-width: 480px) {
+            [data-rk] button[data-testid="connect-wallet-button"] [data-testid="name"] {
+              display: none !important;
+            }
+            
+            [data-rk] button[data-testid="connect-wallet-button"] {
+              padding: 8px !important;
+              width: 44px !important;
+              height: 44px !important;
+              min-height: 44px !important;
+              min-width: 44px !important;
+            }
+          }
+          
+          [data-rk] [role="menu"] {
+            min-width: 260px !important;
+            padding: 12px !important;
+          }
         }
       `}</style>
-      <div className="eaili5-compact-wallet">
+      <div style={{ position: 'relative', zIndex: 50 }}>
         <Wallet>
           <ConnectWallet>
             <Avatar className="h-4 w-4" />
-            <Name className="text-xs font-mono" />
+            <Name className="text-sm font-medium" />
           </ConnectWallet>
           <WalletDropdown>
-            <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
+            <Identity hasCopyAddressOnClick>
               <Avatar />
               <Name />
-              <Address className="text-xs font-mono" />
+              <Address />
               <EthBalance />
             </Identity>
             <WalletDropdownDisconnect />

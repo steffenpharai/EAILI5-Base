@@ -17,10 +17,80 @@ interface SentimentData {
     coingecko: boolean;
     news: boolean;
     reddit: boolean;
+    farcaster?: boolean;
   };
   last_updated: string;
   token_address: string;
   token_symbol?: string;
+}
+
+interface EnhancedSentimentData {
+  sentiment_metrics: {
+    overall_score: number;
+    total_volume: number;
+    confidence: number;
+    platform_scores: {
+      coingecko: number;
+      news: number;
+      reddit: number;
+      farcaster: number;
+    };
+  };
+  platform_breakdown: {
+    coingecko: {
+      available: boolean;
+      engagement_score: number;
+      trending_rank: number;
+    };
+    news: {
+      available: boolean;
+      sentiment: number;
+      mentions: number;
+    };
+    reddit: {
+      available: boolean;
+      sentiment: number;
+      posts: number;
+      engagement: number;
+    };
+    farcaster: {
+      available: boolean;
+      sentiment: number;
+      casts: number;
+      engagement: number;
+    };
+  };
+  anomalies: Array<{
+    type: string;
+    severity: string;
+    description: string;
+    timestamp: string;
+  }>;
+  data_sources: {
+    coingecko: boolean;
+    news: boolean;
+    reddit: boolean;
+    farcaster: boolean;
+  };
+  last_updated: string;
+  token_address: string;
+  token_symbol?: string;
+}
+
+interface TimelineData {
+  token_address: string;
+  time_series: Array<{
+    timestamp: string;
+    sentiment_score: number;
+    social_volume: number;
+    platforms: {
+      reddit: { score: number; volume: number };
+      farcaster: { score: number; volume: number };
+      news: { score: number; volume: number };
+    };
+  }>;
+  period_hours: number;
+  generated_at: string;
 }
 
 interface TokenSentimentProps {
@@ -31,8 +101,11 @@ interface TokenSentimentProps {
 const TokenSentiment: React.FC<TokenSentimentProps> = ({ tokenAddress, tokenSymbol }) => {
   const { theme } = useTheme();
   const [sentimentData, setSentimentData] = useState<SentimentData | null>(null);
+  const [enhancedSentimentData, setEnhancedSentimentData] = useState<EnhancedSentimentData | null>(null);
+  const [timelineData, setTimelineData] = useState<TimelineData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'narrative'>('overview');
 
   const fetchSentimentData = useCallback(async () => {
     setLoading(true);
@@ -57,11 +130,59 @@ const TokenSentiment: React.FC<TokenSentimentProps> = ({ tokenAddress, tokenSymb
     }
   }, [tokenAddress]);
 
+  const fetchEnhancedSentimentData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/tokens/${tokenAddress}/social-sentiment`
+      );
+      const data = await response.json();
+      
+      if (data.status === 'success') {
+        setEnhancedSentimentData(data.sentiment_analysis);
+      } else {
+        setError(data.error || 'Failed to fetch enhanced sentiment data');
+      }
+    } catch (err) {
+      setError('Failed to fetch enhanced sentiment data');
+      console.error('Error fetching enhanced sentiment data:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [tokenAddress]);
+
+  const fetchTimelineData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/tokens/${tokenAddress}/sentiment-timeline`
+      );
+      const data = await response.json();
+      
+      if (data.status === 'success') {
+        setTimelineData(data.timeline);
+      } else {
+        setError(data.error || 'Failed to fetch timeline data');
+      }
+    } catch (err) {
+      setError('Failed to fetch timeline data');
+      console.error('Error fetching timeline data:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [tokenAddress]);
+
   useEffect(() => {
     if (tokenAddress) {
       fetchSentimentData();
+      fetchEnhancedSentimentData();
+      fetchTimelineData();
     }
-  }, [tokenAddress, fetchSentimentData]);
+  }, [tokenAddress, fetchSentimentData, fetchEnhancedSentimentData, fetchTimelineData]);
 
   const getSentimentColor = (score: number) => {
     if (score > 0.2) return theme.accent.green;
@@ -217,29 +338,78 @@ const TokenSentiment: React.FC<TokenSentimentProps> = ({ tokenAddress, tokenSymb
     );
   }
 
-  if (!sentimentData) {
-    return (
-      <div style={containerStyles}>
-        <div style={{ textAlign: 'center', color: theme.text.secondary }}>
-          <MessageCircle className="w-6 h-6 mx-auto mb-2" />
-          <div>No sentiment data available</div>
-        </div>
-      </div>
-    );
-  }
+  // Always show full interface - use placeholder data when no sentiment data available
+  const displayData = sentimentData || {
+    sentiment_score: 0,
+    social_volume: 0,
+    trending_rank: 0,
+    mentions_24h: 0,
+    sentiment_breakdown: {
+      positive: 0,
+      neutral: 0,
+      negative: 0,
+    },
+    data_sources: {
+      coingecko: false,
+      news: false,
+      reddit: false,
+      farcaster: false,
+    },
+    last_updated: new Date().toISOString(),
+    token_address: tokenAddress,
+    token_symbol: tokenSymbol,
+  };
 
-  const { sentiment_score, social_volume, trending_rank, mentions_24h, sentiment_breakdown, data_sources } = sentimentData;
+  const { sentiment_score, social_volume, trending_rank, mentions_24h, sentiment_breakdown, data_sources } = displayData;
 
   return (
     <div style={containerStyles}>
       <div style={headerStyles}>
         <div style={titleStyles}>
           <Activity className="w-5 h-5" />
-          Social Sentiment
+          Social Sentiment Analysis
+          {!sentimentData && (
+            <span style={{ 
+              fontSize: '12px', 
+              color: theme.text.tertiary, 
+              fontWeight: 400,
+              marginLeft: '8px' 
+            }}>
+              (No data)
+            </span>
+          )}
         </div>
         <ProBadge variant={sentiment_score > 0 ? 'bullish' : sentiment_score < 0 ? 'bearish' : 'neutral'}>
           {getSentimentLabel(sentiment_score)}
         </ProBadge>
+      </div>
+
+      {/* Tab Navigation */}
+      <div style={{
+        display: 'flex',
+        gap: '8px',
+        marginBottom: '20px',
+        borderBottom: `1px solid ${theme.border.primary}`
+      }}>
+        {['overview', 'timeline', 'narrative'].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab as 'overview' | 'timeline' | 'narrative')}
+            style={{
+              padding: '8px 16px',
+              border: 'none',
+              background: activeTab === tab ? theme.accent.blue : 'transparent',
+              color: activeTab === tab ? theme.text.inverted : theme.text.primary,
+              borderRadius: '6px 6px 0 0',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 500,
+              textTransform: 'capitalize'
+            }}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
 
       <div style={sentimentGaugeStyles}>

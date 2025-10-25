@@ -75,6 +75,33 @@ async def check_database_connection() -> bool:
         logger.error(f"Database connection check failed: {e}")
         return False
 
+async def create_appreciation_tables():
+    """Create appreciation-related tables if they don't exist"""
+    try:
+        async with AsyncSessionLocal() as session:
+            # Create appreciation_transactions table
+            await session.execute(text("""
+                CREATE TABLE IF NOT EXISTS appreciation_transactions (
+                    id SERIAL PRIMARY KEY,
+                    user_id VARCHAR(255) NOT NULL,
+                    transaction_hash VARCHAR(66) NOT NULL UNIQUE,
+                    amount_eth DECIMAL(18, 8) NOT NULL,
+                    message_id VARCHAR(255),
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                )
+            """))
+            
+            # Create indexes for better performance
+            await session.execute(text("CREATE INDEX IF NOT EXISTS idx_appreciation_user_id ON appreciation_transactions(user_id)"))
+            await session.execute(text("CREATE INDEX IF NOT EXISTS idx_appreciation_created_at ON appreciation_transactions(created_at)"))
+            
+            await session.commit()
+            logger.info("Appreciation tables created successfully")
+            
+    except Exception as e:
+        logger.error(f"Error creating appreciation tables: {e}")
+        raise
+
 async def close_database_connections():
     """Close all database connections"""
     try:

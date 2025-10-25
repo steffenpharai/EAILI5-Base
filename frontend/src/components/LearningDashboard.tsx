@@ -16,6 +16,7 @@ import {
   Zap
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { apiEndpoints } from '../services/api';
 import { ProButton } from './pro';
 
 interface LearningDashboardProps {
@@ -73,29 +74,29 @@ const LearningDashboard: React.FC<LearningDashboardProps> = ({ userId = 'anonymo
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [progressStats, setProgressStats] = useState<ProgressStats | null>(null);
   const [loading, setLoading] = useState(false);
+  const [completingLesson, setCompletingLesson] = useState<string | null>(null);
 
   const fetchLearningData = async () => {
+    if (!userId) return;
+    
     setLoading(true);
     try {
-      // Fetch learning paths
-      const pathsResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/education/paths`);
-      const pathsData = await pathsResponse.json();
-      if (pathsData.status === 'success') {
-        setLearningPaths(pathsData.paths || []);
+      // Fetch learning paths using centralized API service
+      const pathsResponse = await apiEndpoints.getLearningPaths();
+      if (pathsResponse.data.status === 'success') {
+        setLearningPaths(pathsResponse.data.paths || []);
       }
 
-      // Fetch achievements
-      const achievementsResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/progress/${userId}/achievements`);
-      const achievementsData = await achievementsResponse.json();
-      if (achievementsData.status === 'success') {
-        setAchievements(achievementsData.achievements || []);
+      // Fetch achievements using centralized API service
+      const achievementsResponse = await apiEndpoints.getAchievements(userId);
+      if (achievementsResponse.data.status === 'success') {
+        setAchievements(achievementsResponse.data.achievements || []);
       }
 
-      // Fetch progress stats
-      const progressResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/progress/${userId}/stats`);
-      const progressData = await progressResponse.json();
-      if (progressData.status === 'success') {
-        setProgressStats(progressData.stats);
+      // Fetch progress stats using centralized API service
+      const progressResponse = await apiEndpoints.getProgressStats(userId);
+      if (progressResponse.data.status === 'success') {
+        setProgressStats(progressResponse.data.stats);
       }
 
       // Fetch lessons (mock data for now)
@@ -147,6 +148,42 @@ const LearningDashboard: React.FC<LearningDashboardProps> = ({ userId = 'anonymo
   useEffect(() => {
     fetchLearningData();
   }, [userId]);
+
+  // Handle lesson completion
+  const handleLessonComplete = async (lessonId: string) => {
+    if (!userId) return;
+    
+    setCompletingLesson(lessonId);
+    try {
+      // Mark lesson as complete in backend
+      await apiEndpoints.completeLesson(userId, lessonId);
+      
+      // Update local state
+      setLessons(prev => prev.map(lesson => 
+        lesson.id === lessonId 
+          ? { ...lesson, completed: true }
+          : lesson
+      ));
+      
+      // Refresh progress stats
+      const progressResponse = await apiEndpoints.getProgressStats(userId);
+      if (progressResponse.data.status === 'success') {
+        setProgressStats(progressResponse.data.stats);
+      }
+      
+      // Refresh achievements (might have unlocked new ones)
+      const achievementsResponse = await apiEndpoints.getAchievements(userId);
+      if (achievementsResponse.data.status === 'success') {
+        setAchievements(achievementsResponse.data.achievements || []);
+      }
+      
+      console.log('Lesson completed successfully:', lessonId);
+    } catch (error) {
+      console.error('Error completing lesson:', error);
+    } finally {
+      setCompletingLesson(null);
+    }
+  };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -519,9 +556,10 @@ const LearningDashboard: React.FC<LearningDashboardProps> = ({ userId = 'anonymo
           <ProButton
             variant={lesson.completed ? "ghost" : "primary"}
             size="sm"
-            disabled={!lesson.completed}
+            disabled={lesson.completed || completingLesson === lesson.id}
+            onClick={() => !lesson.completed && handleLessonComplete(lesson.id)}
           >
-            {lesson.completed ? 'Completed' : 'Start'}
+            {completingLesson === lesson.id ? 'Completing...' : lesson.completed ? 'Completed' : 'Start'}
           </ProButton>
         </div>
       ))}

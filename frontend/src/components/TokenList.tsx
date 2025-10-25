@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { Search, TrendingUp, TrendingDown, ChevronDown, X, Menu } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, TrendingUp, TrendingDown, ChevronDown, X, ChevronLeft, ChevronRight, LayoutDashboard } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { useMobile } from '../hooks/useMobile';
+import { useTokenWebSocket } from '../hooks/useTokenWebSocket';
 import { ProInput } from './pro';
 import { Token } from '../hooks/useTokenData';
 
@@ -13,6 +15,7 @@ interface TokenListProps {
   onCategoryChange?: (category: string) => void;
   isMobileDrawerOpen?: boolean;
   onMobileDrawerToggle?: () => void;
+  onDashboardClick?: () => void;
 }
 
 const TokenList: React.FC<TokenListProps> = ({ 
@@ -23,12 +26,34 @@ const TokenList: React.FC<TokenListProps> = ({
   category = 'top15',
   onCategoryChange,
   isMobileDrawerOpen = false,
-  onMobileDrawerToggle
+  onMobileDrawerToggle,
+  onDashboardClick
 }) => {
   const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
-  const isMobile = window.innerWidth < 768;
+  const isMobile = useMobile();
+  const { isConnected: wsConnected, tokenUpdates, error: wsError } = useTokenWebSocket();
+  
+  // Drawer state for desktop
+  const [isDrawerOpen, setIsDrawerOpen] = useState(true);
+  
+  // Load drawer state from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem('eaili5_tokenlist_drawer_open');
+    if (stored !== null) {
+      setIsDrawerOpen(JSON.parse(stored));
+    }
+  }, []);
+  
+  // Persist drawer state to localStorage
+  useEffect(() => {
+    localStorage.setItem('eaili5_tokenlist_drawer_open', JSON.stringify(isDrawerOpen));
+  }, [isDrawerOpen]);
+  
+  const toggleDrawer = () => {
+    setIsDrawerOpen(!isDrawerOpen);
+  };
 
   const categories = [
     { id: 'top15', label: 'Top 15', description: 'Most active tokens' },
@@ -37,7 +62,22 @@ const TokenList: React.FC<TokenListProps> = ({
     { id: 'new', label: 'New Tokens', description: 'Recently discovered' }
   ];
 
-  const filteredTokens = tokens.filter(token =>
+  // Get real-time token data if available
+  const getTokenWithRealtimeData = (token: Token) => {
+    const realtimeData = tokenUpdates.get(token.address);
+    if (realtimeData) {
+      return {
+        ...token,
+        price: realtimeData.price || token.price,
+        priceChange24h: realtimeData.priceChange24h || token.priceChange24h,
+        volume24h: realtimeData.volume24h || token.volume24h,
+        lastUpdate: realtimeData.lastUpdate
+      };
+    }
+    return token;
+  };
+
+  const filteredTokens = tokens.filter(token => 
     token.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     token.symbol.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -176,11 +216,12 @@ const TokenList: React.FC<TokenListProps> = ({
     return `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
   };
 
-  return (
-    <div style={containerStyles}>
-      <div style={headerStyles}>
-        {/* Mobile drawer handle */}
-        {isMobile && (
+  // For mobile, keep the existing drawer behavior
+  if (isMobile) {
+    return (
+      <div style={containerStyles}>
+        <div style={headerStyles}>
+          {/* Mobile drawer handle */}
           <div style={{
             position: 'absolute',
             top: '8px',
@@ -192,8 +233,282 @@ const TokenList: React.FC<TokenListProps> = ({
             borderRadius: '2px',
             marginBottom: '12px',
           }} />
-        )}
-        
+          
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '12px',
+          }}>
+            <div style={titleStyles}>Tokens</div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              {onDashboardClick && (
+                <button
+                  onClick={onDashboardClick}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 12px',
+                    background: 'transparent',
+                    border: `1px solid ${theme.border.primary}`,
+                    borderRadius: '6px',
+                    color: theme.text.secondary,
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    transition: 'all 150ms ease',
+                    minHeight: '44px',
+                    minWidth: '44px',
+                    touchAction: 'manipulation',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                  aria-label="Open Dashboard"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  {!isMobile && <span>Dashboard</span>}
+                </button>
+              )}
+              {onMobileDrawerToggle && (
+                <button
+                  onClick={onMobileDrawerToggle}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: theme.text.primary,
+                    cursor: 'pointer',
+                    padding: '8px',
+                    borderRadius: '4px',
+                    minWidth: '44px',
+                    minHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <X size={20} />
+                </button>
+              )}
+            </div>
+          </div>
+          
+          {/* Category Dropdown */}
+          <div style={{ position: 'relative', marginBottom: '12px' }}>
+            <div
+              onClick={() => setShowDropdown(!showDropdown)}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                background: theme.surface.primary,
+                border: `1px solid ${theme.border.primary}`,
+                borderRadius: '6px',
+                cursor: 'pointer',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: '14px',
+                color: theme.text.primary,
+                transition: 'all 150ms ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = theme.surface.secondary;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = theme.surface.primary;
+              }}
+            >
+              <span>{categories.find(c => c.id === category)?.label}</span>
+              <ChevronDown className="w-4 h-4" />
+            </div>
+            
+            {showDropdown && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                background: theme.surface.primary,
+                border: `1px solid ${theme.border.primary}`,
+                borderRadius: '6px',
+                zIndex: 1000,
+                marginTop: '4px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+              }}>
+                {categories.map((cat) => (
+                  <div
+                    key={cat.id}
+                    onClick={() => {
+                      if (onCategoryChange) {
+                        onCategoryChange(cat.id);
+                      }
+                      setShowDropdown(false);
+                    }}
+                    style={{
+                      padding: '12px',
+                      cursor: 'pointer',
+                      borderBottom: `1px solid ${theme.border.primary}`,
+                      background: category === cat.id ? theme.surface.secondary : 'transparent',
+                      transition: 'background 150ms ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (category !== cat.id) {
+                        e.currentTarget.style.background = theme.surface.secondary;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (category !== cat.id) {
+                        e.currentTarget.style.background = 'transparent';
+                      }
+                    }}
+                  >
+                    <div style={{ fontSize: '14px', fontWeight: 500, color: theme.text.primary }}>
+                      {cat.label}
+                    </div>
+                    <div style={{ fontSize: '12px', color: theme.text.tertiary, marginTop: '2px' }}>
+                      {cat.description}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          <ProInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search..."
+            icon={<Search className="w-4 h-4" />}
+          />
+        </div>
+
+        <div style={listContainerStyles}>
+          {loading ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: theme.text.secondary }}>
+              Loading tokens...
+            </div>
+          ) : filteredTokens.length === 0 ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: theme.text.secondary }}>
+              No tokens found
+            </div>
+          ) : (
+            filteredTokens.map((token) => (
+              <div
+                key={token.address}
+                style={tokenItemStyles(selectedToken?.address === token.address)}
+                onClick={() => onSelectToken(token)}
+                onMouseEnter={(e) => {
+                  if (selectedToken?.address !== token.address) {
+                    e.currentTarget.style.background = theme.surface.secondary;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedToken?.address !== token.address) {
+                    e.currentTarget.style.background = 'transparent';
+                  }
+                }}
+              >
+                <div style={tokenHeaderStyles}>
+                  <div style={tokenNameContainerStyles}>
+                    <div style={symbolStyles}>{token.symbol}</div>
+                    <div style={tokenNameStyles}>
+                      {token.name}
+                    </div>
+                  </div>
+                  <div style={priceContainerStyles}>
+                    <div style={priceStyles}>{formatPrice(token)}</div>
+                    <div style={changeStyles(token.priceChange24h)}>
+                      {token.priceChange24h >= 0 ? (
+                        <TrendingUp className="w-3 h-3" />
+                      ) : (
+                        <TrendingDown className="w-3 h-3" />
+                      )}
+                      {formatChange(token.priceChange24h)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // For desktop, use resizing sidebar (not overlay)
+  const sidebarStyles: React.CSSProperties = {
+    width: isDrawerOpen ? '280px' : '0px',
+    minWidth: isDrawerOpen ? '280px' : '0px',
+    maxWidth: isDrawerOpen ? '280px' : '0px',
+    overflow: 'hidden',
+    transition: 'all 300ms ease-in-out',
+    background: theme.surface.primary,
+    borderRight: isDrawerOpen ? `1px solid ${theme.border.primary}` : 'none',
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%', // Full height of parent
+    position: 'relative', // Not fixed
+    flexShrink: 0
+  };
+
+
+  return (
+    <>
+      {/* Toggle Button - Always visible, positioned outside sidebar */}
+      <button
+        style={{
+          position: 'fixed',
+          left: isDrawerOpen ? '258px' : '0px', // 280px - 22px when open, 0px when closed
+          top: '50%',
+          transform: 'translateY(-50%)',
+          width: '44px',
+          height: '44px',
+          background: theme.surface.secondary,
+          border: `1px solid ${theme.border.primary}`,
+          borderRadius: '50%',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: theme.text.primary,
+          transition: 'all 300ms ease-in-out',
+          zIndex: 1000,
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+          minHeight: '44px',
+          minWidth: '44px',
+          touchAction: 'manipulation',
+          WebkitTapHighlightColor: 'transparent'
+        }}
+        onClick={toggleDrawer}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = theme.surface.tertiary;
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = theme.surface.secondary;
+        }}
+        onTouchStart={(e) => {
+          e.currentTarget.style.transform = 'translateY(-50%) scale(0.95)';
+        }}
+        onTouchEnd={(e) => {
+          e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+        }}
+        aria-label={isDrawerOpen ? 'Close token list' : 'Open token list'}
+        title={isDrawerOpen ? 'Close token list' : 'Open token list'}
+      >
+        {isDrawerOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+      </button>
+
+      <div style={sidebarStyles}>
+
+      {/* Sidebar Content */}
+      <div style={{
+        width: '280px',
+        minWidth: '280px',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        overflow: 'hidden'
+      }}>
+        <div style={headerStyles}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -201,24 +516,31 @@ const TokenList: React.FC<TokenListProps> = ({
           marginBottom: '12px',
         }}>
           <div style={titleStyles}>Tokens</div>
-          {isMobile && onMobileDrawerToggle && (
+          {onDashboardClick && (
             <button
-              onClick={onMobileDrawerToggle}
+              onClick={onDashboardClick}
               style={{
-                background: 'transparent',
-                border: 'none',
-                color: theme.text.primary,
-                cursor: 'pointer',
-                padding: '8px',
-                borderRadius: '4px',
-                minWidth: '44px',
-                minHeight: '44px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
+                gap: '6px',
+                padding: '8px 12px',
+                background: 'transparent',
+                border: `1px solid ${theme.border.primary}`,
+                borderRadius: '6px',
+                color: theme.text.secondary,
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: 500,
+                transition: 'all 150ms ease',
+                minHeight: '44px',
+                minWidth: '44px',
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
               }}
+              aria-label="Open Dashboard"
             >
-              <X size={20} />
+              <LayoutDashboard className="w-4 h-4" />
+              <span>Dashboard</span>
             </button>
           )}
         </div>
@@ -274,12 +596,28 @@ const TokenList: React.FC<TokenListProps> = ({
                     }
                     setShowDropdown(false);
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      if (onCategoryChange) {
+                        onCategoryChange(cat.id);
+                      }
+                      setShowDropdown(false);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Select ${cat.label} category`}
                   style={{
                     padding: '12px',
                     cursor: 'pointer',
                     borderBottom: `1px solid ${theme.border.primary}`,
                     background: category === cat.id ? theme.surface.secondary : 'transparent',
-                    transition: 'background 150ms ease'
+                    transition: 'background 150ms ease',
+                    minHeight: '44px', // Ensure touch target compliance
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center'
                   }}
                   onMouseEnter={(e) => {
                     if (category !== cat.id) {
@@ -310,7 +648,7 @@ const TokenList: React.FC<TokenListProps> = ({
           placeholder="Search..."
           icon={<Search className="w-4 h-4" />}
         />
-      </div>
+        </div>
 
       <div style={listContainerStyles}>
         {loading ? (
@@ -322,22 +660,34 @@ const TokenList: React.FC<TokenListProps> = ({
             No tokens found
           </div>
         ) : (
-          filteredTokens.map((token) => (
-            <div
-              key={token.address}
-              style={tokenItemStyles(selectedToken?.address === token.address)}
-              onClick={() => onSelectToken(token)}
-              onMouseEnter={(e) => {
-                if (selectedToken?.address !== token.address) {
-                  e.currentTarget.style.background = theme.surface.secondary;
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (selectedToken?.address !== token.address) {
-                  e.currentTarget.style.background = 'transparent';
-                }
-              }}
-            >
+                filteredTokens.map((token) => {
+                  const tokenWithRealtime = getTokenWithRealtimeData(token);
+                  return (
+                    <div
+                      key={token.address}
+                      style={tokenItemStyles(selectedToken?.address === token.address)}
+                      onClick={() => onSelectToken(tokenWithRealtime)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          onSelectToken(tokenWithRealtime);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Select ${token.name} (${token.symbol}) token`}
+                      aria-selected={selectedToken?.address === token.address}
+                      onMouseEnter={(e) => {
+                        if (selectedToken?.address !== token.address) {
+                          e.currentTarget.style.background = theme.surface.secondary;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedToken?.address !== token.address) {
+                          e.currentTarget.style.background = 'transparent';
+                        }
+                      }}
+                    >
               <div style={tokenHeaderStyles}>
                 <div style={tokenNameContainerStyles}>
                   <div style={symbolStyles}>{token.symbol}</div>
@@ -346,22 +696,34 @@ const TokenList: React.FC<TokenListProps> = ({
                   </div>
                 </div>
                 <div style={priceContainerStyles}>
-                  <div style={priceStyles}>{formatPrice(token)}</div>
-                  <div style={changeStyles(token.priceChange24h)}>
-                    {token.priceChange24h >= 0 ? (
+                  <div style={priceStyles}>{formatPrice(tokenWithRealtime)}</div>
+                  <div style={changeStyles(tokenWithRealtime.priceChange24h)}>
+                    {tokenWithRealtime.priceChange24h >= 0 ? (
                       <TrendingUp className="w-3 h-3" />
                     ) : (
                       <TrendingDown className="w-3 h-3" />
                     )}
-                    {formatChange(token.priceChange24h)}
+                    {formatChange(tokenWithRealtime.priceChange24h)}
+                    {tokenWithRealtime.lastUpdate && (
+                      <span style={{ 
+                        fontSize: '10px', 
+                        color: theme.text.tertiary,
+                        marginLeft: '4px'
+                      }}>
+                        🔴
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
-          ))
+          );
+        })
         )}
       </div>
-    </div>
+    </div>  {/* Close inner 280px container */}
+    </div>  {/* Close outer sidebar */}
+    </>
   );
 };
 

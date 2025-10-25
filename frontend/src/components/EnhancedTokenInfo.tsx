@@ -229,7 +229,9 @@ const EnhancedTokenInfo: React.FC<EnhancedTokenInfoProps> = ({ token }) => {
             {enhancedData.image && (
               <img 
                 src={enhancedData.image} 
-                alt={enhancedData.name}
+                alt={`${enhancedData.name} logo`}
+                loading="lazy"
+                decoding="async"
                 style={{ width: '48px', height: '48px', borderRadius: '8px' }}
               />
             )}

@@ -134,3 +134,27 @@ Desktop.ini
 *.rar
 *.7z
 
+# ============================================
+# Project Specific
+# ============================================
+# Cursor IDE
+.cursor/
+
+# Video files
+*.mp4
+*.avi
+*.mov
+*.mkv
+
+# Screenshots and images (unless specifically needed)
+Screenshot*.png
+screenshot*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.tiff
+
+# Planning documents (unless they're important)
+*.plan.md
+

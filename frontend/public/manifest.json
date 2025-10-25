@@ -21,9 +21,57 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#0A0A0F",
+  "theme_color": "#3B82F6",
   "background_color": "#0A0A0F",
   "categories": ["education", "finance", "productivity"],
   "lang": "en",
-  "orientation": "portrait-primary"
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "screenshots": [
+    {
+      "src": "screenshot1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "screenshot2.png", 
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "AI Learning",
+      "short_name": "Learn",
+      "description": "Start learning about cryptocurrency",
+      "url": "/?view=learn",
+      "icons": [
+        {
+          "src": "logo192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Portfolio",
+      "short_name": "Portfolio", 
+      "description": "View your portfolio simulation",
+      "url": "/?view=portfolio",
+      "icons": [
+        {
+          "src": "logo192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
 }

@@ -99,6 +99,10 @@ coingecko_service = CoinGeckoService()
 from services.sentiment_service import SentimentService
 sentiment_service = SentimentService(coingecko_service, tavily_service)
 
+# Initialize feedback service
+from services.feedback_service import FeedbackService
+feedback_service = FeedbackService()
+
 # Initialize coordinator (will be updated with dependencies in startup)
 coordinator = None
 educator_agent = None
@@ -167,11 +171,20 @@ async def startup_event():
         # Initialize Mini App service
         await miniapp_service.initialize()
         
+        # Initialize feedback service
+        from database.connection import get_database, create_appreciation_tables
+        db_session = await get_database()
+        await feedback_service.initialize(db_session, redis_service.redis_client)
+        
+        # Create appreciation tables
+        await create_appreciation_tables()
+        logger.info("Feedback service initialized successfully")
+        
         # Initialize coordinator and agents with dependencies
         global coordinator, educator_agent, research_agent, portfolio_agent, trading_strategy_agent, web_search_agent
         logger.info("Creating AI agents...")
         try:
-            coordinator = CoordinatorAgent(openai_service, tavily_service)
+            coordinator = CoordinatorAgent(openai_service, tavily_service, sentiment_service)
             educator_agent = EducatorAgent(openai_service)
             research_agent = ResearchAgent(openai_service)
             portfolio_agent = PortfolioAdvisorAgent(openai_service)
@@ -202,6 +215,10 @@ async def startup_event():
             logger.error(f"Missing agents: {missing_agents}")
             raise Exception(f"Missing agents: {missing_agents}")
         
+        # Create social sentiment agent
+        from agents.social_sentiment_agent import SocialSentimentAgent
+        social_sentiment_agent = SocialSentimentAgent(openai_service, sentiment_service)
+        
         agents = {
             "coordinator": coordinator,
             "educator": educator_agent,
@@ -209,6 +226,7 @@ async def startup_event():
             "portfolio": portfolio_agent,
             "trading_strategy": trading_strategy_agent,
             "web_search": web_search_agent,
+            "social_sentiment": social_sentiment_agent,
             "openai": openai_service
         }
         tools = {
@@ -218,7 +236,8 @@ async def startup_event():
             "portfolio": portfolio_simulator,
             "base_client": base_client,
             "educational": educational_content_service,
-            "progress": progress_tracking_service
+            "progress": progress_tracking_service,
+            "sentiment": sentiment_service
         }
         logger.info(f"Initializing enhanced orchestrator with agents: {list(agents.keys())}")
         
@@ -381,6 +400,124 @@ async def get_token_sentiment(token_address: str):
     except Exception as e:
         logger.error(f"Error fetching token sentiment: {e}")
         return {"error": "Failed to fetch token sentiment", "status": "error"}
+
+@app.get("/api/tokens/{token_address}/social-sentiment")
+async def get_social_sentiment_analysis(token_address: str, hours: int = 24):
+    """Get comprehensive social sentiment analysis with causal narrative"""
+    try:
+        # Get token details to get symbol for better search results
+        token_data = await token_service.get_token_details(token_address)
+        token_symbol = token_data.get("symbol")
+        
+        # Get multi-platform sentiment analysis
+        sentiment_data = await sentiment_service.get_multi_platform_sentiment(token_address, token_symbol)
+        
+        # CRITICAL: Route through LangGraph orchestrator (never direct OpenAI)
+        narrative_query = sentiment_service.get_sentiment_context_for_narrative(
+            token_address, token_symbol, sentiment_data
+        )
+        
+        # Check if orchestrator is available
+        if not enhanced_langgraph_orchestrator:
+            return {
+                "error": "AI orchestrator is not initialized. The service may be starting up.",
+                "status": "error",
+                "sentiment_analysis": sentiment_data,
+                "ai_narrative": None
+            }
+        
+        # Use existing orchestrator instance from main.py
+        try:
+            orchestrator_result = await enhanced_langgraph_orchestrator.process_message(
+                message=narrative_query,
+                session_id=f"sentiment_{token_address}",
+                user_id="sentiment_user",
+                context={
+                    "token_address": token_address,
+                    "token_symbol": token_symbol,
+                    "sentiment_data": sentiment_data,
+                    "intent": "social_sentiment"
+                }
+            )
+            
+            narrative = orchestrator_result.get("message", "No narrative generated.")
+        except Exception as orch_error:
+            logger.error(f"Orchestrator failed to generate narrative: {orch_error}")
+            return {
+                "error": f"AI narrative generation failed: {str(orch_error)}",
+                "status": "error",
+                "sentiment_analysis": sentiment_data,
+                "ai_narrative": None
+            }
+        
+        return {
+            "sentiment_analysis": sentiment_data,
+            "ai_narrative": narrative,  # ADD THIS LINE
+            "status": "success",
+            "token_address": token_address,
+            "token_symbol": token_symbol,
+            "analysis_hours": hours
+        }
+    except Exception as e:
+        logger.error(f"Error fetching social sentiment analysis: {e}")
+        return {"error": "Failed to fetch social sentiment analysis", "status": "error"}
+
+@app.get("/api/tokens/{token_address}/sentiment-timeline")
+async def get_sentiment_timeline(token_address: str, hours: int = 24):
+    """Get sentiment timeline data for charting"""
+    try:
+        # Get sentiment time series data
+        timeline_data = await sentiment_service.get_sentiment_time_series(token_address, hours)
+        
+        return {
+            "timeline": timeline_data,
+            "status": "success",
+            "token_address": token_address,
+            "period_hours": hours
+        }
+    except Exception as e:
+        logger.error(f"Error fetching sentiment timeline: {e}")
+        return {"error": "Failed to fetch sentiment timeline", "status": "error"}
+
+@app.get("/api/social/trending-topics")
+async def get_trending_social_topics(platform: str = "all"):
+    """Get trending social topics across platforms"""
+    try:
+        # This would typically query a database or external API
+        # For now, return mock data
+        trending_data = {
+            "platform": platform,
+            "trending_topics": [
+                {
+                    "topic": "Base ecosystem",
+                    "mentions": 150,
+                    "sentiment": 0.3,
+                    "platform": "reddit"
+                },
+                {
+                    "topic": "DeFi protocols",
+                    "mentions": 120,
+                    "sentiment": 0.2,
+                    "platform": "farcaster"
+                },
+                {
+                    "topic": "NFT projects",
+                    "mentions": 80,
+                    "sentiment": -0.1,
+                    "platform": "news"
+                }
+            ],
+            "total_topics": 3,
+            "generated_at": datetime.now().isoformat()
+        }
+        
+        return {
+            "trending_data": trending_data,
+            "status": "success"
+        }
+    except Exception as e:
+        logger.error(f"Error fetching trending topics: {e}")
+        return {"error": "Failed to fetch trending topics", "status": "error"}
 
 @app.post("/api/portfolio/simulate")
 async def simulate_trade(trade_data: dict):
@@ -1189,6 +1326,36 @@ async def get_miniapp_config():
     except Exception as e:
         logger.error(f"Error fetching Mini App config: {e}")
         return {"error": "Failed to fetch config", "status": "error"}
+
+# Appreciation API endpoints
+
+@app.post("/api/appreciation/log")
+async def log_appreciation_transaction(request: dict):
+    """Log an appreciation transaction (optional tracking)"""
+    try:
+        user_id = request.get("user_id")
+        transaction_hash = request.get("transaction_hash")
+        amount_eth = request.get("amount_eth")
+        message_id = request.get("message_id")
+        
+        if not user_id or not transaction_hash or not amount_eth:
+            raise HTTPException(status_code=400, detail="Missing required fields: user_id, transaction_hash, amount_eth")
+        
+        result = await feedback_service.log_appreciation_transaction(
+            user_id=user_id,
+            transaction_hash=transaction_hash,
+            amount_eth=float(amount_eth),
+            message_id=message_id
+        )
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error logging appreciation transaction: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 
 @app.get("/health")
 async def health_check_simple():

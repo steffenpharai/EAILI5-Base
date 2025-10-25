@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createChart, ColorType, Time, CandlestickSeries, LineSeries } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi } from 'lightweight-charts';
 import { useTheme } from '../contexts/ThemeContext';
-import { ProButton } from './pro';
+import { useMobile } from '../hooks/useMobile';
 import { Token } from '../hooks/useTokenData';
 import { 
   TrendingUp, 
@@ -33,6 +33,7 @@ interface IndicatorConfig {
 
 const TradingChart: React.FC<TradingChartProps> = ({ token }) => {
   const { theme } = useTheme();
+  const isMobile = useMobile();
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candlestickSeriesRef = useRef<ISeriesApi<'Candlestick'> | any>(null);
@@ -109,6 +110,14 @@ const TradingChart: React.FC<TradingChartProps> = ({ token }) => {
         borderColor: theme.border.primary,
         timeVisible: true,
         secondsVisible: false,
+        rightOffset: 12,           // ADD: Space on right side
+        barSpacing: 10,            // ADD: Minimum space between bars (wider = more readable)
+        minBarSpacing: 8,          // ADD: Don't compress bars below this
+        fixLeftEdge: false,        // ADD: Allow scrolling left
+        fixRightEdge: false,       // ADD: Allow scrolling right
+        lockVisibleTimeRangeOnResize: false, // ADD: Adjust visible range on resize
+        rightBarStaysOnScroll: true,         // ADD: Keep right bar visible when scrolling
+        visible: true,
       },
       rightPriceScale: {
         borderColor: theme.border.primary,
@@ -116,6 +125,19 @@ const TradingChart: React.FC<TradingChartProps> = ({ token }) => {
           top: 0.1,
           bottom: 0.1,
         },
+        visible: true,
+        autoScale: true,           // ADD: Auto-scale price axis
+      },
+      handleScroll: {
+        mouseWheel: true,          // ADD: Enable mouse wheel scrolling
+        pressedMouseMove: true,    // ADD: Enable click-drag scrolling
+        horzTouchDrag: true,       // ADD: Enable touch drag on mobile
+        vertTouchDrag: false,      // Disable vertical touch drag
+      },
+      handleScale: {
+        axisPressedMouseMove: true,  // ADD: Enable scaling via axis
+        mouseWheel: true,            // ADD: Enable zoom with mouse wheel
+        pinch: true,                 // ADD: Enable pinch zoom on mobile
       },
     });
 
@@ -145,6 +167,19 @@ const TradingChart: React.FC<TradingChartProps> = ({ token }) => {
       }));
       
       candlestickSeries.setData(candlestickData);
+      
+      // ADD: Set visible range to show last 30-40 candles initially
+      // This prevents overcrowding and makes chart readable
+      if (candlestickData.length > 40) {
+        const visibleStart = candlestickData.length - 40;
+        chart.timeScale().setVisibleRange({
+          from: candlestickData[visibleStart].time,
+          to: candlestickData[candlestickData.length - 1].time,
+        });
+      } else {
+        // Fit all data if less than 40 candles
+        chart.timeScale().fitContent();
+      }
       
       // Add indicators
       const smaIndicator = indicators.find(i => i.type === 'sma' && i.visible);
@@ -263,6 +298,22 @@ const TradingChart: React.FC<TradingChartProps> = ({ token }) => {
     };
   }, [theme, token, timeframe, ohlcData, loading, indicators, showGrid]);
 
+  // Enhanced resize handler
+  useEffect(() => {
+    if (!chartRef.current || !chartContainerRef.current) return;
+
+    const handleResize = () => {
+      if (chartRef.current && chartContainerRef.current) {
+        chartRef.current.applyOptions({
+          width: chartContainerRef.current.clientWidth,
+        });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const containerStyles: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
@@ -274,30 +325,84 @@ const TradingChart: React.FC<TradingChartProps> = ({ token }) => {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '16px 20px',
+    padding: isMobile ? '8px 12px' : '2px 6px',  // Responsive padding
     borderBottom: `1px solid ${theme.border.primary}`,
+    gap: isMobile ? '8px' : '2px',    // Responsive gap
+    height: isMobile ? '64px' : '28px',  // Responsive height
+    minHeight: isMobile ? '64px' : '28px',
+    flexWrap: isMobile ? 'wrap' : 'nowrap',  // Allow wrapping on mobile
   };
 
   const tokenInfoStyles: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
+    gap: isMobile ? '8px' : '4px',    // Responsive gap
+    flex: isMobile ? '1 1 100%' : '0 0 auto',  // Full width on mobile
   };
 
   const tokenNameStyles: React.CSSProperties = {
-    fontSize: '18px',
-    fontWeight: 600,
+    fontSize: isMobile ? '16px' : '13px',      // Responsive font
+    fontWeight: 700,
     color: theme.text.primary,
+    letterSpacing: '-0.02em',
     fontFamily: 'Inter, system-ui, sans-serif',
   };
 
   const priceStyles: React.CSSProperties = {
-    fontSize: '16px',
-    fontWeight: 500,
+    fontSize: isMobile ? '16px' : '13px',      // Responsive font
+    fontWeight: 600,
     color: theme.text.primary,
     fontFamily: 'JetBrains Mono, monospace',
   };
 
+
+  const controlsContainerStyles: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: isMobile ? '8px' : '2px',    // Responsive gap
+    flex: isMobile ? '1 1 100%' : '1 1 auto',
+    justifyContent: isMobile ? 'flex-start' : 'flex-end',
+    overflow: isMobile ? 'auto' : 'hidden', // Scrollable on mobile
+    WebkitOverflowScrolling: 'touch',
+  };
+
+  const controlGroupStyles: React.CSSProperties = {
+    display: 'flex',
+    gap: isMobile ? '4px' : '0px',    // Responsive gap
+    padding: isMobile ? '2px' : '0px',
+    background: theme.surface.secondary,
+    borderRadius: isMobile ? '6px' : '2px',
+    flexShrink: 0,
+  };
+
+  const separatorStyles: React.CSSProperties = {
+    width: '1px',
+    height: isMobile ? '32px' : '24px',
+    background: theme.border.primary,
+    opacity: 0.5,
+  };
+
+  // Responsive button styles - Best practice: 44px on mobile, compact on desktop
+  const chartButtonStyles = (isActive: boolean): React.CSSProperties => ({
+    minHeight: isMobile ? '44px' : '24px',
+    minWidth: isMobile ? '44px' : '32px',
+    padding: isMobile ? '12px 16px' : '4px 8px',
+    fontSize: isMobile ? '14px' : '12px',
+    fontWeight: 600,
+    background: isActive ? theme.accent.blue : theme.surface.secondary,
+    color: isActive ? theme.text.inverted : theme.text.primary,
+    border: `1px solid ${isActive ? theme.accent.blue : theme.border.primary}`,
+    borderRadius: isMobile ? '6px' : '4px',
+    cursor: 'pointer',
+    transition: 'all 150ms ease',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontFamily: 'Inter, system-ui, sans-serif',
+    touchAction: 'manipulation',
+    WebkitTapHighlightColor: 'transparent',
+    userSelect: 'none',
+  });
 
   const formatPrice = (token: Token | null) => {
     if (!token) return '$0.00';
@@ -362,7 +467,13 @@ const TradingChart: React.FC<TradingChartProps> = ({ token }) => {
               <div style={tokenNameStyles}>{token.symbol}</div>
               <div style={priceStyles}>{formatPrice(token)}</div>
               <div style={{
-                fontSize: '14px',
+                fontSize: isMobile ? '14px' : '11px',      // Responsive font
+                fontWeight: 600,
+                padding: isMobile ? '4px 8px' : '2px 4px',    // Responsive padding
+                borderRadius: isMobile ? '4px' : '2px',
+                background: token.priceChange24h >= 0 
+                  ? 'rgba(0, 200, 5, 0.1)' 
+                  : 'rgba(255, 82, 82, 0.1)',
                 color: token.priceChange24h >= 0 ? theme.accent.green : theme.accent.red,
                 fontFamily: 'JetBrains Mono, monospace',
               }}>
@@ -374,106 +485,198 @@ const TradingChart: React.FC<TradingChartProps> = ({ token }) => {
           )}
         </div>
 
-        <div style={{
-          display: 'flex',
-          gap: '8px',
-          alignItems: 'center',
-          flexWrap: 'wrap'
-        }}>
+        <div style={controlsContainerStyles}>
           {/* Timeframe Controls */}
-          <div style={{ display: 'flex', gap: '4px' }}>
+          <div style={controlGroupStyles}>
             {(['1m', '5m', '15m', '1h', '4h', '1d'] as Timeframe[]).map((tf) => (
-              <ProButton
+              <button
                 key={tf}
-                variant={timeframe === tf ? 'primary' : 'ghost'}
-                size="sm"
+                style={chartButtonStyles(timeframe === tf)}
                 onClick={() => setTimeframe(tf)}
+                aria-label={`${tf} timeframe`}
               >
                 {tf}
-              </ProButton>
+              </button>
             ))}
           </div>
 
+          <div style={separatorStyles} />
+
           {/* Chart Type Controls */}
-          <div style={{ display: 'flex', gap: '4px', marginLeft: '16px' }}>
-            <ProButton
-              variant={chartType === 'candlestick' ? 'primary' : 'ghost'}
-              size="sm"
+          <div style={controlGroupStyles}>
+            <button
+              style={chartButtonStyles(chartType === 'candlestick')}
               onClick={() => setChartType('candlestick')}
+              aria-label="Candlestick chart"
             >
               <BarChart3 className="w-4 h-4" />
-            </ProButton>
-            <ProButton
-              variant={chartType === 'line' ? 'primary' : 'ghost'}
-              size="sm"
+            </button>
+            <button
+              style={chartButtonStyles(chartType === 'line')}
               onClick={() => setChartType('line')}
+              aria-label="Line chart"
             >
               <LineChart className="w-4 h-4" />
-            </ProButton>
+            </button>
           </div>
+
+          <div style={separatorStyles} />
 
           {/* Indicator Controls */}
-          <div style={{ display: 'flex', gap: '4px', marginLeft: '16px' }}>
-            <ProButton
-              variant={indicators.find(i => i.type === 'sma')?.visible ? 'primary' : 'ghost'}
-              size="sm"
+          <div style={controlGroupStyles}>
+            <button
+              style={chartButtonStyles(!!indicators.find(i => i.type === 'sma')?.visible)}
               onClick={() => toggleIndicator('sma')}
+              aria-label="Toggle SMA indicator"
             >
               <TrendingUp className="w-4 h-4" />
-            </ProButton>
-            <ProButton
-              variant={indicators.find(i => i.type === 'ema')?.visible ? 'primary' : 'ghost'}
-              size="sm"
+            </button>
+            <button
+              style={chartButtonStyles(!!indicators.find(i => i.type === 'ema')?.visible)}
               onClick={() => toggleIndicator('ema')}
+              aria-label="Toggle EMA indicator"
             >
               <TrendingDown className="w-4 h-4" />
-            </ProButton>
-            <ProButton
-              variant={indicators.find(i => i.type === 'volume')?.visible ? 'primary' : 'ghost'}
-              size="sm"
+            </button>
+            <button
+              style={chartButtonStyles(!!indicators.find(i => i.type === 'volume')?.visible)}
               onClick={() => toggleIndicator('volume')}
+              aria-label="Toggle Volume indicator"
             >
               <Activity className="w-4 h-4" />
-            </ProButton>
+            </button>
           </div>
+
+          <div style={separatorStyles} />
 
           {/* Zoom Controls */}
-          <div style={{ display: 'flex', gap: '4px', marginLeft: '16px' }}>
-            <ProButton
-              variant="ghost"
-              size="sm"
+          <div style={controlGroupStyles}>
+            <button
+              style={chartButtonStyles(false)}
               onClick={() => chartRef.current?.timeScale().fitContent()}
+              aria-label="Zoom in"
             >
               <ZoomIn className="w-4 h-4" />
-            </ProButton>
-            <ProButton
-              variant="ghost"
-              size="sm"
+            </button>
+            <button
+              style={chartButtonStyles(false)}
               onClick={() => chartRef.current?.timeScale().fitContent()}
+              aria-label="Zoom out"
             >
               <ZoomOut className="w-4 h-4" />
-            </ProButton>
-            <ProButton
-              variant="ghost"
-              size="sm"
+            </button>
+            <button
+              style={chartButtonStyles(false)}
               onClick={() => chartRef.current?.timeScale().fitContent()}
+              aria-label="Reset zoom"
             >
               <RotateCcw className="w-4 h-4" />
-            </ProButton>
+            </button>
           </div>
 
+          <div style={separatorStyles} />
+
           {/* Settings */}
-          <ProButton
-            variant={showSettings ? 'primary' : 'ghost'}
-            size="sm"
+          <button
+            style={chartButtonStyles(showSettings)}
             onClick={() => setShowSettings(!showSettings)}
+            aria-label="Chart settings"
           >
             <Settings className="w-4 h-4" />
-          </ProButton>
+          </button>
         </div>
       </div>
 
-      <div ref={chartContainerRef} style={{ flex: 1, position: 'relative' }} />
+      <div 
+        ref={chartContainerRef} 
+        style={{ 
+          flex: 1, 
+          position: 'relative',
+          width: '100%', 
+          height: '400px',
+          minHeight: '400px',        // ADD: Ensure minimum height
+          cursor: 'crosshair',       // ADD: Better cursor for trading chart
+          touchAction: 'none',       // ADD: Better touch handling
+        }} 
+      >
+        {/* Placeholder when no token is selected */}
+        {!token && !loading && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            textAlign: 'center',
+            color: theme.text.tertiary,
+            pointerEvents: 'none',
+          }}>
+            <TrendingUp 
+              style={{ 
+                width: isMobile ? '48px' : '64px',
+                height: isMobile ? '48px' : '64px',
+                color: theme.accent.blue, 
+                opacity: 0.3,
+                margin: '0 auto 16px',
+              }} 
+            />
+            <div style={{ 
+              fontSize: isMobile ? '14px' : '16px',
+              marginBottom: '8px',
+              fontWeight: 500,
+            }}>
+              Select a token to view chart
+            </div>
+            <div style={{ 
+              fontSize: isMobile ? '12px' : '13px',
+              opacity: 0.7,
+            }}>
+              Choose from the token list on the left
+            </div>
+          </div>
+        )}
+
+        {/* Loading spinner */}
+        {loading && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            textAlign: 'center',
+          }}>
+            <Activity 
+              style={{ 
+                width: '32px',
+                height: '32px',
+                color: theme.accent.blue,
+                animation: 'spin 1s linear infinite',
+              }} 
+            />
+            <div style={{
+              marginTop: '12px',
+              fontSize: '13px',
+              color: theme.text.secondary,
+            }}>
+              Loading chart data...
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Chart Controls Hint */}
+      <div style={{
+        fontSize: '11px',
+        color: theme.text.tertiary,
+        marginTop: '8px',
+        display: 'flex',
+        gap: '12px',
+        justifyContent: 'center',
+        opacity: 0.7,
+      }}>
+        <span>🖱️ Click + Drag to pan</span>
+        <span>⚙️ Scroll to zoom</span>
+        <span>↔️ Double-click to fit</span>
+      </div>
 
       {/* Settings Panel */}
       {showSettings && (
@@ -510,20 +713,20 @@ const TradingChart: React.FC<TradingChartProps> = ({ token }) => {
               Scale Type
             </label>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <ProButton
-                variant={scaleType === 'linear' ? 'primary' : 'ghost'}
-                size="sm"
+              <button
+                style={chartButtonStyles(scaleType === 'linear')}
                 onClick={() => setScaleType('linear')}
+                aria-label="Linear scale"
               >
                 Linear
-              </ProButton>
-              <ProButton
-                variant={scaleType === 'logarithmic' ? 'primary' : 'ghost'}
-                size="sm"
+              </button>
+              <button
+                style={chartButtonStyles(scaleType === 'logarithmic')}
                 onClick={() => setScaleType('logarithmic')}
+                aria-label="Logarithmic scale"
               >
                 Log
-              </ProButton>
+              </button>
             </div>
           </div>
 

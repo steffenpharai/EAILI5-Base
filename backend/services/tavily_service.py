@@ -32,7 +32,7 @@ class TavilyService:
     async def initialize(self, api_key: str):
         """Initialize Tavily service"""
         try:
-            self.api_key = api_key
+            self.api_key = api_key.strip() if api_key else None  # Add .strip() to remove whitespace
             logger.info("Tavily service initialized successfully")
             
         except Exception as e:
@@ -54,7 +54,6 @@ class TavilyService:
                 raise Exception("Tavily API key not configured")
             
             payload = {
-                "api_key": self.api_key,
                 "query": query,
                 "search_depth": search_depth,
                 "include_answer": include_answer,
@@ -63,10 +62,16 @@ class TavilyService:
                 "max_results": max_results
             }
             
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json"
+            }
+            
             async with httpx.AsyncClient() as client:
                 response = await client.post(
                     f"{self.base_url}/search",
                     json=payload,
+                    headers=headers,
                     timeout=30.0
                 )
                 

@@ -118,6 +118,7 @@ class EnhancedLangGraphOrchestrator:
             workflow.add_node("portfolio", self._enhanced_portfolio_node)
             workflow.add_node("trading_strategy", self._enhanced_trading_strategy_node)
             workflow.add_node("web_search", self._enhanced_web_search_node)
+            workflow.add_node("social_sentiment", self._enhanced_social_sentiment_node)
             workflow.add_node("synthesizer", self._enhanced_synthesizer_node)
             workflow.add_node("memory_updater", self._memory_updater_node)
             
@@ -153,6 +154,7 @@ class EnhancedLangGraphOrchestrator:
                     "portfolio": "portfolio",
                     "trading_strategy": "trading_strategy",
                     "web_search": "web_search",
+                    "social_sentiment": "social_sentiment",
                     "synthesizer": "synthesizer"
                 }
             )
@@ -163,6 +165,7 @@ class EnhancedLangGraphOrchestrator:
             workflow.add_edge("portfolio", "synthesizer")
             workflow.add_edge("trading_strategy", "synthesizer")
             workflow.add_edge("web_search", "synthesizer")
+            workflow.add_edge("social_sentiment", "synthesizer")
             
             # Synthesizer leads to memory update
             workflow.add_edge("synthesizer", "memory_updater")
@@ -629,6 +632,57 @@ class EnhancedLangGraphOrchestrator:
             logger.error(f"Error in enhanced web search: {e}")
             return state
     
+    async def _enhanced_social_sentiment_node(self, state: EnhancedAgentState) -> EnhancedAgentState:
+        """Enhanced social sentiment agent with tool integration"""
+        try:
+            user_id = state["user_id"]
+            message = state["messages"][-1]["content"] if state["messages"] else ""
+            context = state["context"]
+            tool_results = state["tool_results"]
+            
+            # Get social sentiment agent
+            social_sentiment = self.agents.get("social_sentiment")
+            if not social_sentiment:
+                logger.error("Social sentiment agent not found")
+                return state
+            
+            # Build enhanced context for social sentiment
+            enhanced_context = {
+                **context,
+                "tool_results": tool_results,
+                "user_profile": state["user_profile"],
+                "social_requirements": context.get("semantic_context", {})
+            }
+            
+            # Process with social sentiment
+            social_sentiment_response = await social_sentiment.process(
+                message=message,
+                user_id=user_id,
+                learning_level=state.get("learning_level", 0),
+                context=enhanced_context
+            )
+            response = {
+                "message": social_sentiment_response,
+                "suggestions": ["What's the latest social sentiment?", "How is the community reacting?", "What are the trending topics?"],
+                "learning_level": state.get("learning_level", 0)
+            }
+            
+            # Update state with simplified response
+            state["agent_responses"]["social_sentiment"] = {
+                "message": response.get("message", ""),
+                "suggestions": response.get("suggestions", []),
+                "learning_level": response.get("learning_level", 0)
+            }
+            state["current_agent"] = "social_sentiment"
+            state["completed_agents"].append("social_sentiment")
+            
+            logger.info(f"Enhanced social sentiment processed message for user {user_id}")
+            return state
+            
+        except Exception as e:
+            logger.error(f"Error in enhanced social sentiment: {e}")
+            return state
+    
     async def _enhanced_synthesizer_node(self, state: EnhancedAgentState) -> EnhancedAgentState:
         """Enhanced synthesizer with memory and context awareness"""
         try:
@@ -945,6 +999,7 @@ class EnhancedLangGraphOrchestrator:
             # Import tool classes
             from .tools.blockchain_tools import BlockchainTools
             from .tools.educational_tools import EducationalTools
+            from .tools.register_social_tools import register_social_sentiment_tools
             
             # Initialize tool instances
             blockchain_tools = BlockchainTools(
@@ -983,6 +1038,17 @@ class EnhancedLangGraphOrchestrator:
                 )
                 self.tool_registry.register_tool(tool)
             
+            # Register social sentiment tools
+            sentiment_service = self.tools.get("sentiment")
+            if sentiment_service:
+                success = register_social_sentiment_tools(self.tool_registry, sentiment_service)
+                if success:
+                    logger.info("Social sentiment tools registered successfully")
+                else:
+                    logger.warning("Some social sentiment tools failed to register")
+            else:
+                logger.warning("Sentiment service not available for social sentiment tools")
+            
             logger.info("All tools registered successfully")
             
         except Exception as e:
@@ -996,15 +1062,62 @@ class EnhancedLangGraphOrchestrator:
     ) -> Dict[str, Any]:
         """Analyze intent with enhanced context awareness"""
         try:
-            # This would use the coordinator agent with enhanced prompting
-            # For now, return basic intent analysis
+            message_lower = message.lower()
+            
+            # Determine intent based on keywords and context
+            intents = []
+            confidence_scores = {}
+            required_agents = []
+            
+            # Social sentiment detection
+            if any(word in message_lower for word in ["social", "sentiment", "reddit", "farcaster", "community buzz", "trending", "social media", "community", "hype", "fomo", "fud"]):
+                intents.append("social_sentiment")
+                confidence_scores["social_sentiment"] = 0.9
+                required_agents.append("social_sentiment")
+            
+            # Token analysis detection
+            elif any(word in message_lower for word in ["analyze", "analysis", "research this", "tell me about"]) and context and context.get('token_data'):
+                intents.append("token_analysis")
+                confidence_scores["token_analysis"] = 0.9
+                required_agents.extend(["research", "web_search", "social_sentiment", "trading_strategy"])
+            
+            # Trading strategy detection
+            elif any(word in message_lower for word in ["trade", "trading", "buy", "sell", "long", "short", "scalp", "swing"]):
+                intents.append("trading_strategy")
+                confidence_scores["trading_strategy"] = 0.8
+                required_agents.append("trading_strategy")
+            
+            # Portfolio detection
+            elif any(word in message_lower for word in ["portfolio", "simulate", "virtual", "practice", "balance"]):
+                intents.append("portfolio")
+                confidence_scores["portfolio"] = 0.8
+                required_agents.append("portfolio")
+            
+            # Research detection
+            elif any(word in message_lower for word in ["token", "price", "liquidity", "volume", "market cap", "dex"]):
+                intents.append("research")
+                confidence_scores["research"] = 0.8
+                required_agents.append("research")
+            
+            # Web search detection
+            elif any(word in message_lower for word in ["news", "latest", "recent", "today", "current", "happening"]):
+                intents.append("web_search")
+                confidence_scores["web_search"] = 0.8
+                required_agents.append("web_search")
+            
+            # Default to education
+            else:
+                intents.append("education")
+                confidence_scores["education"] = 0.8
+                required_agents.append("educator")
+            
             return {
-                "intents": ["education"],
-                "confidence_scores": {"education": 0.8},
-                "required_agents": ["educator"],
+                "intents": intents,
+                "confidence_scores": confidence_scores,
+                "required_agents": required_agents,
                 "needs_clarification": False,
-                "primary_topic": "general",
-                "engagement_level": "medium"
+                "primary_topic": intents[0] if intents else "general",
+                "engagement_level": "high" if len(required_agents) > 1 else "medium"
             }
             
         except Exception as e:
@@ -1037,6 +1150,8 @@ class EnhancedLangGraphOrchestrator:
                     required_tools["categories"].extend(["web_search", "blockchain"])
                 elif intent in ["portfolio", "trading"]:
                     required_tools["categories"].extend(["blockchain", "portfolio"])
+                elif intent in ["social_sentiment"]:
+                    required_tools["categories"].extend(["social_sentiment"])
                 elif intent in ["education"]:
                     required_tools["categories"].extend(["educational"])
             

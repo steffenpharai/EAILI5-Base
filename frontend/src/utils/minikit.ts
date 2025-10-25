@@ -1,9 +1,11 @@
 /**
  * MiniKit utilities for Base Mini App integration
  * Detects if running inside Coinbase Wallet and provides Mini App functionality
- * Integrates with OnchainKit MiniKit components
+ * Integrates with OnchainKit MiniKit components and Farcaster Mini App SDK
  * Reference: https://docs.base.org/onchainkit/latest/components/minikit/overview
  */
+
+import { sdk } from '@farcaster/miniapp-sdk';
 
 export interface MiniAppInfo {
   isMiniApp: boolean;
@@ -52,7 +54,7 @@ export function detectMiniApp(): MiniAppInfo {
 
 /**
  * Initialize Mini App features if running inside Coinbase Wallet
- * Enhanced with OnchainKit MiniKit integration
+ * Enhanced with OnchainKit MiniKit integration and Farcaster SDK
  */
 export function initializeMiniApp(): Promise<MiniAppInfo> {
   return new Promise((resolve) => {
@@ -87,6 +89,19 @@ export function initializeMiniApp(): Promise<MiniAppInfo> {
     
     resolve(miniAppInfo);
   });
+}
+
+/**
+ * Signal to Farcaster that the app is ready
+ * This dismisses the splash screen in Farcaster Mini Apps
+ */
+export async function signalAppReady(): Promise<void> {
+  try {
+    await sdk.actions.ready();
+    console.log('✅ Farcaster Mini App ready signal sent');
+  } catch (error) {
+    console.warn('⚠️ Farcaster SDK not available (running in web environment):', error);
+  }
 }
 
 /**

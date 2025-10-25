@@ -2,11 +2,13 @@ import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation } from '../contexts/NavigationContext';
+import { useAccount } from 'wagmi';
 import LearningDashboard from './LearningDashboard';
 
 const LearningView: React.FC = () => {
   const { theme } = useTheme();
   const { goHome } = useNavigation();
+  const { address } = useAccount();
 
   const containerStyles: React.CSSProperties = {
     display: 'flex',
@@ -59,7 +61,7 @@ const LearningView: React.FC = () => {
 
       {/* Learning Content */}
       <div style={contentStyles}>
-        <LearningDashboard />
+        <LearningDashboard userId={address || 'anonymous'} />
       </div>
     </div>
   );

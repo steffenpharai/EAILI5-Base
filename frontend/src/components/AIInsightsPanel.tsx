@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Brain, TrendingUp, AlertTriangle, Lightbulb, Send, Search } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { useMobile } from '../hooks/useMobile';
 import { ProCard, ProButton, ProInput, ProBadge } from './pro';
 import { Token } from '../hooks/useTokenData';
 import { useChat } from '../hooks/useChat';
 import { sessionManager } from '../utils/sessionManager';
+import CollapsiblePanel from './CollapsiblePanel';
+// import FeedbackWidget from './FeedbackWidget'; // Removed - using FeedbackBar instead
 
 // Add interface for agent activities
 interface AgentActivity {
@@ -260,7 +263,7 @@ const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ token, walletAddress 
   };
 
   // Add responsive styles
-  const isMobile = window.innerWidth < 768;
+  const isMobile = useMobile();
 
   const containerStyles: React.CSSProperties = {
     display: 'flex',
@@ -304,229 +307,499 @@ const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ token, walletAddress 
     gap: '8px',
   };
 
-  return (
-    <div style={containerStyles}>
-      <div style={headerStyles}>
-        <div style={titleStyles}>
-          <Brain className="w-4 h-4 inline mr-2" style={{ verticalAlign: 'middle' }} />
-          AI Insights
-        </div>
-        <div style={subtitleStyles}>
-          Powered by EAILI5
-        </div>
-      </div>
-
-      {/* Learning Progress Indicator */}
-      <div style={{
-        padding: '12px 16px',
-        borderBottom: `1px solid ${theme.border.primary}`,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <div>
-          <div style={{ fontSize: '12px', color: theme.text.tertiary }}>
-            Learning Progress
+  // For mobile, use bottom sheet overlay pattern
+  if (isMobile) {
+    return (
+      <CollapsiblePanel
+        id="ai-insights-mobile"
+        title="AI Insights"
+        direction="vertical"
+        defaultCollapsed={{ mobile: true, desktop: false }}
+        collapsedSize="48px"
+        expandedSize="80vh"
+        icon={<Brain className="w-4 h-4" />}
+        badge={agentActivities.length > 0 ? agentActivities.length : undefined}
+        className="mobile-ai-insights"
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1000,
+          maxHeight: '80vh',
+          borderRadius: '16px 16px 0 0',
+          boxShadow: '0 -4px 20px rgba(0,0,0,0.15)',
+        }}
+      >
+        <div style={containerStyles}>
+          <div style={headerStyles}>
+            <div style={titleStyles}>
+              <Brain className="w-4 h-4 inline mr-2" style={{ verticalAlign: 'middle' }} />
+              AI Insights
+            </div>
+            <div style={subtitleStyles}>
+              Powered by EAILI5
+            </div>
           </div>
-          <div style={{ fontSize: '14px', color: theme.text.primary, fontWeight: 600 }}>
-            Level {Math.floor(learningLevel / 10)} Crypto Explorer
-          </div>
-        </div>
-        
-        <div style={{
-          width: '100px',
-          height: '4px',
-          background: theme.surface.secondary,
-          borderRadius: '2px',
-          overflow: 'hidden'
-        }}>
-          <div style={{
-            width: `${(learningLevel % 10) * 10}%`,
-            height: '100%',
-            background: theme.accent.blue,
-            transition: 'width 0.3s ease'
-          }} />
-        </div>
-      </div>
 
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '16px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px'
-      }}>
-        {!token ? (
+          {/* Learning Progress Indicator */}
           <div style={{
+            padding: '12px 16px',
+            borderBottom: `1px solid ${theme.border.primary}`,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <div>
+              <div style={{ fontSize: '12px', color: theme.text.tertiary }}>
+                Learning Progress
+              </div>
+              <div style={{ fontSize: '14px', color: theme.text.primary, fontWeight: 600 }}>
+                Level {Math.floor(learningLevel / 10)} Crypto Explorer
+              </div>
+            </div>
+            
+            <div style={{
+              width: '100px',
+              height: '4px',
+              background: theme.surface.secondary,
+              borderRadius: '2px',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                width: `${(learningLevel % 10) * 10}%`,
+                height: '100%',
+                background: theme.accent.blue,
+                transition: 'width 0.3s ease'
+              }} />
+            </div>
+          </div>
+
+          <div style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '16px',
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            textAlign: 'center',
-            color: theme.text.tertiary,
-            padding: '20px',
+            gap: '12px'
           }}>
-            <Brain className="w-12 h-12 mb-4" />
-            <div style={{ fontSize: '14px', marginBottom: '8px' }}>
-              Select a token to get AI insights
+            {!token ? (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+                textAlign: 'center',
+                color: theme.text.tertiary,
+                padding: '20px',
+              }}>
+                <Brain className="w-12 h-12 mb-4" />
+                <div style={{ fontSize: '14px', marginBottom: '8px' }}>
+                  Select a token to get AI insights
+                </div>
+                <div style={{ fontSize: '12px' }}>
+                  I'll analyze it with complete honesty
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Token Info */}
+                <ProCard padding="sm">
+                  <div style={{ marginBottom: '8px' }}>
+                    <div style={{ fontSize: '16px', fontWeight: 600, color: theme.text.primary }}>
+                      {token.symbol}
+                    </div>
+                    <div style={{ fontSize: '12px', color: theme.text.secondary }}>
+                      {token.name}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <ProBadge variant={token.priceChange24h >= 0 ? 'bullish' : 'bearish'}>
+                      {token.priceChange24h >= 0 ? <TrendingUp className="w-3 h-3" /> : null}
+                      {token.priceChange24h.toFixed(2)}%
+                    </ProBadge>
+                    <ProBadge variant={token.safetyScore >= 80 ? 'bullish' : token.safetyScore >= 60 ? 'neutral' : 'bearish'}>
+                      <AlertTriangle className="w-3 h-3" />
+                      Safety: {token.safetyScore}
+                    </ProBadge>
+                  </div>
+                </ProCard>
+
+                {/* Agent Activities Display */}
+                {agentActivities.length > 0 && (
+                  <div style={{
+                    padding: '12px',
+                    background: `${theme.surface.secondary}80`,
+                    borderRadius: '8px',
+                    marginBottom: '12px'
+                  }}>
+                    {agentActivities.map((activity, idx) => (
+                      <div key={idx} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '11px',
+                        color: theme.text.tertiary,
+                        marginBottom: idx < agentActivities.length - 1 ? '4px' : '0'
+                      }}>
+                        {activity.icon}
+                        <span style={{ fontWeight: 500, color: theme.accent.blue }}>
+                          {activity.agent}
+                        </span>
+                        <span>•</span>
+                        <span>{activity.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Conversation History */}
+                <div style={{
+                  flex: 1,
+                  overflowY: 'auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}>
+                  {conversationHistory.map((msg, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                        width: '100%'
+                      }}
+                    >
+                      {msg.role === 'system' && (
+                        <div style={{
+                          fontSize: '11px',
+                          color: theme.text.tertiary,
+                          marginBottom: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}>
+                          <Brain className="w-3 h-3" />
+                          <span>EAILI5 {msg.agent ? `(${msg.agent})` : ''}</span>
+                        </div>
+                      )}
+                      
+                      <div
+                        style={{
+                          maxWidth: '85%',
+                          padding: '12px 16px',
+                          borderRadius: '12px',
+                          background: msg.role === 'user' 
+                            ? theme.accent.blue
+                            : `${theme.surface.secondary}`,
+                          color: msg.role === 'user' ? '#ffffff' : theme.text.primary,
+                          fontSize: '14px',
+                          lineHeight: '1.5',
+                          whiteSpace: 'pre-wrap'
+                        }}
+                      >
+                        {msg.content}
+                      </div>
+                      
+                      <div style={{
+                        fontSize: '10px',
+                        color: theme.text.tertiary,
+                        marginTop: '4px'
+                      }}>
+                        {new Date(msg.timestamp).toLocaleTimeString()}
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Show typing indicator when analyzing */}
+                  {isAnalyzing && (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      color: theme.text.tertiary,
+                      fontSize: '13px'
+                    }}>
+                      <Brain className="w-4 h-4 animate-pulse" />
+                      <span>EAILI5 is analyzing...</span>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Ask AI Input */}
+          <div style={footerStyles}>
+            <ProInput
+              value={question}
+              onChange={setQuestion}
+              placeholder="Ask AI about this token..."
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleAskQuestion();
+                }
+              }}
+              disabled={!token || isAnalyzing || !isConnected}
+            />
+            <ProButton
+              onClick={handleAskQuestion}
+              disabled={!question.trim() || !token || isAnalyzing || !isConnected}
+              variant="primary"
+            >
+              <Send className="w-4 h-4" />
+            </ProButton>
+          </div>
+        </div>
+      </CollapsiblePanel>
+    );
+  }
+
+  // For desktop, use CollapsiblePanel as right drawer
+  return (
+    <CollapsiblePanel
+      id="ai-insights-desktop"
+      title="AI Insights"
+      direction="horizontal"
+      defaultCollapsed={{ mobile: true, desktop: false }}
+      collapsedSize="48px"
+      expandedSize="320px"
+      icon={<Brain className="w-4 h-4" />}
+      badge={agentActivities.length > 0 ? agentActivities.length : undefined}
+      className="desktop-ai-insights"
+      style={{
+        position: 'fixed',
+        right: 0,
+        top: 0,
+        height: '100vh',
+        zIndex: 100,
+      }}
+    >
+      <div style={containerStyles}>
+        <div style={headerStyles}>
+          <div style={titleStyles}>
+            <Brain className="w-4 h-4 inline mr-2" style={{ verticalAlign: 'middle' }} />
+            AI Insights
+          </div>
+          <div style={subtitleStyles}>
+            Powered by EAILI5
+          </div>
+        </div>
+
+        {/* Learning Progress Indicator */}
+        <div style={{
+          padding: '12px 16px',
+          borderBottom: `1px solid ${theme.border.primary}`,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div>
+            <div style={{ fontSize: '12px', color: theme.text.tertiary }}>
+              Learning Progress
             </div>
-            <div style={{ fontSize: '12px' }}>
-              I'll analyze it with complete honesty
+            <div style={{ fontSize: '14px', color: theme.text.primary, fontWeight: 600 }}>
+              Level {Math.floor(learningLevel / 10)} Crypto Explorer
             </div>
           </div>
-        ) : (
-          <>
-            {/* Token Info */}
-            <ProCard padding="sm">
-              <div style={{ marginBottom: '8px' }}>
-                <div style={{ fontSize: '16px', fontWeight: 600, color: theme.text.primary }}>
-                  {token.symbol}
-                </div>
-                <div style={{ fontSize: '12px', color: theme.text.secondary }}>
-                  {token.name}
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <ProBadge variant={token.priceChange24h >= 0 ? 'bullish' : 'bearish'}>
-                  {token.priceChange24h >= 0 ? <TrendingUp className="w-3 h-3" /> : null}
-                  {token.priceChange24h.toFixed(2)}%
-                </ProBadge>
-                <ProBadge variant={token.safetyScore >= 80 ? 'bullish' : token.safetyScore >= 60 ? 'neutral' : 'bearish'}>
-                  <AlertTriangle className="w-3 h-3" />
-                  Safety: {token.safetyScore}
-                </ProBadge>
-              </div>
-            </ProCard>
+          
+          <div style={{
+            width: '100px',
+            height: '4px',
+            background: theme.surface.secondary,
+            borderRadius: '2px',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              width: `${(learningLevel % 10) * 10}%`,
+              height: '100%',
+              background: theme.accent.blue,
+              transition: 'width 0.3s ease'
+            }} />
+          </div>
+        </div>
 
-            {/* Agent Activities Display */}
-            {agentActivities.length > 0 && (
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px'
+        }}>
+          {!token ? (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              textAlign: 'center',
+              color: theme.text.tertiary,
+              padding: '20px',
+            }}>
+              <Brain className="w-12 h-12 mb-4" />
+              <div style={{ fontSize: '14px', marginBottom: '8px' }}>
+                Select a token to get AI insights
+              </div>
+              <div style={{ fontSize: '12px' }}>
+                I'll analyze it with complete honesty
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Token Info */}
+              <ProCard padding="sm">
+                <div style={{ marginBottom: '8px' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 600, color: theme.text.primary }}>
+                    {token.symbol}
+                  </div>
+                  <div style={{ fontSize: '12px', color: theme.text.secondary }}>
+                    {token.name}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <ProBadge variant={token.priceChange24h >= 0 ? 'bullish' : 'bearish'}>
+                    {token.priceChange24h >= 0 ? <TrendingUp className="w-3 h-3" /> : null}
+                    {token.priceChange24h.toFixed(2)}%
+                  </ProBadge>
+                  <ProBadge variant={token.safetyScore >= 80 ? 'bullish' : token.safetyScore >= 60 ? 'neutral' : 'bearish'}>
+                    <AlertTriangle className="w-3 h-3" />
+                    Safety: {token.safetyScore}
+                  </ProBadge>
+                </div>
+              </ProCard>
+
+              {/* Agent Activities Display */}
+              {agentActivities.length > 0 && (
+                <div style={{
+                  padding: '12px',
+                  background: `${theme.surface.secondary}80`,
+                  borderRadius: '8px',
+                  marginBottom: '12px'
+                }}>
+                  {agentActivities.map((activity, idx) => (
+                    <div key={idx} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontSize: '11px',
+                      color: theme.text.tertiary,
+                      marginBottom: idx < agentActivities.length - 1 ? '4px' : '0'
+                    }}>
+                      {activity.icon}
+                      <span style={{ fontWeight: 500, color: theme.accent.blue }}>
+                        {activity.agent}
+                      </span>
+                      <span>•</span>
+                      <span>{activity.status}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Conversation History */}
               <div style={{
-                padding: '12px',
-                background: `${theme.surface.secondary}80`,
-                borderRadius: '8px',
-                marginBottom: '12px'
+                flex: 1,
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
               }}>
-                {agentActivities.map((activity, idx) => (
-                  <div key={idx} style={{
+                {conversationHistory.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                      width: '100%'
+                    }}
+                  >
+                    {msg.role === 'system' && (
+                      <div style={{
+                        fontSize: '11px',
+                        color: theme.text.tertiary,
+                        marginBottom: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}>
+                        <Brain className="w-3 h-3" />
+                        <span>EAILI5 {msg.agent ? `(${msg.agent})` : ''}</span>
+                      </div>
+                    )}
+                    
+                    <div
+                      style={{
+                        maxWidth: '85%',
+                        padding: '12px 16px',
+                        borderRadius: '12px',
+                        background: msg.role === 'user' 
+                          ? theme.accent.blue
+                          : `${theme.surface.secondary}`,
+                        color: msg.role === 'user' ? '#ffffff' : theme.text.primary,
+                        fontSize: '14px',
+                        lineHeight: '1.5',
+                        whiteSpace: 'pre-wrap'
+                      }}
+                    >
+                      {msg.content}
+                    </div>
+                    
+                    <div style={{
+                      fontSize: '10px',
+                      color: theme.text.tertiary,
+                      marginTop: '4px'
+                    }}>
+                      {new Date(msg.timestamp).toLocaleTimeString()}
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Show typing indicator when analyzing */}
+                {isAnalyzing && (
+                  <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
-                    fontSize: '11px',
                     color: theme.text.tertiary,
-                    marginBottom: idx < agentActivities.length - 1 ? '4px' : '0'
+                    fontSize: '13px'
                   }}>
-                    {activity.icon}
-                    <span style={{ fontWeight: 500, color: theme.accent.blue }}>
-                      {activity.agent}
-                    </span>
-                    <span>•</span>
-                    <span>{activity.status}</span>
+                    <Brain className="w-4 h-4 animate-pulse" />
+                    <span>EAILI5 is analyzing...</span>
                   </div>
-                ))}
+                )}
               </div>
-            )}
+            </>
+          )}
+        </div>
 
-            {/* Conversation History */}
-            <div style={{
-              flex: 1,
-              overflowY: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px'
-            }}>
-              {conversationHistory.map((msg, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    width: '100%'
-                  }}
-                >
-                  {msg.role === 'system' && (
-                    <div style={{
-                      fontSize: '11px',
-                      color: theme.text.tertiary,
-                      marginBottom: '4px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}>
-                      <Brain className="w-3 h-3" />
-                      <span>EAILI5 {msg.agent ? `(${msg.agent})` : ''}</span>
-                    </div>
-                  )}
-                  
-                  <div
-                    style={{
-                      maxWidth: '85%',
-                      padding: '12px 16px',
-                      borderRadius: '12px',
-                      background: msg.role === 'user' 
-                        ? theme.accent.blue
-                        : `${theme.surface.secondary}`,
-                      color: msg.role === 'user' ? '#ffffff' : theme.text.primary,
-                      fontSize: '14px',
-                      lineHeight: '1.5',
-                      whiteSpace: 'pre-wrap'
-                    }}
-                  >
-                    {msg.content}
-                  </div>
-                  
-                  <div style={{
-                    fontSize: '10px',
-                    color: theme.text.tertiary,
-                    marginTop: '4px'
-                  }}>
-                    {new Date(msg.timestamp).toLocaleTimeString()}
-                  </div>
-                </div>
-              ))}
-              
-              {/* Show typing indicator when analyzing */}
-              {isAnalyzing && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  color: theme.text.tertiary,
-                  fontSize: '13px'
-                }}>
-                  <Brain className="w-4 h-4 animate-pulse" />
-                  <span>EAILI5 is analyzing...</span>
-                </div>
-              )}
-            </div>
-          </>
-        )}
+        {/* Ask AI Input */}
+        <div style={footerStyles}>
+          <ProInput
+            value={question}
+            onChange={setQuestion}
+            placeholder="Ask AI about this token..."
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleAskQuestion();
+              }
+            }}
+            disabled={!token || isAnalyzing || !isConnected}
+          />
+          <ProButton
+            onClick={handleAskQuestion}
+            disabled={!question.trim() || !token || isAnalyzing || !isConnected}
+            variant="primary"
+          >
+            <Send className="w-4 h-4" />
+          </ProButton>
+        </div>
       </div>
-
-      {/* Ask AI Input */}
-      <div style={footerStyles}>
-        <ProInput
-          value={question}
-          onChange={setQuestion}
-          placeholder="Ask AI about this token..."
-          onKeyPress={(e) => {
-            if (e.key === 'Enter') {
-              handleAskQuestion();
-            }
-          }}
-          disabled={!token || isAnalyzing || !isConnected}
-        />
-        <ProButton
-          onClick={handleAskQuestion}
-          disabled={!question.trim() || !token || isAnalyzing || !isConnected}
-          variant="primary"
-        >
-          <Send className="w-4 h-4" />
-        </ProButton>
-      </div>
-    </div>
+    </CollapsiblePanel>
   );
 };
 

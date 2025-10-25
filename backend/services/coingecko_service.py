@@ -22,8 +22,8 @@ class CoinGeckoService:
         self.base_token_cache_timestamp = 0
         self.category_cache = {}
         
-        # Rate limiting: 2.5s between calls = 24 calls/min (safely under 50/min)
-        self.rate_limit_delay = 2.5
+        # Rate limiting: 4s between calls = 15 calls/min (conservative for free tier)
+        self.rate_limit_delay = 4.0
         
         # Cache TTLs
         self.base_token_list_ttl = 86400  # 24 hours for coin list

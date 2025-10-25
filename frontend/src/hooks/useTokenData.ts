@@ -16,6 +16,7 @@ export interface Token {
   holders: number;
   holdersFormatted?: string;
   safetyScore: number;
+  lastUpdate?: number;
 }
 
 export const useTokenData = (category: string = 'top15') => {

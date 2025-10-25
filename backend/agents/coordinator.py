@@ -14,6 +14,7 @@ from .educator_agent import EducatorAgent
 from .portfolio_agent import PortfolioAdvisorAgent
 from .trading_strategy_agent import TradingStrategyAgent
 from .web_search_agent import WebSearchAgent
+from .social_sentiment_agent import SocialSentimentAgent
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +24,10 @@ class CoordinatorAgent:
     and maintains conversation context and user learning level.
     """
     
-    def __init__(self, openai_service=None, tavily_service=None):
+    def __init__(self, openai_service=None, tavily_service=None, sentiment_service=None):
         self.openai_service = openai_service
         self.tavily_service = tavily_service
+        self.sentiment_service = sentiment_service
         
         # Initialize agents with dependencies
         self.research_agent = ResearchAgent(openai_service)
@@ -33,6 +35,7 @@ class CoordinatorAgent:
         self.portfolio_agent = PortfolioAdvisorAgent(openai_service)
         self.trading_strategy_agent = TradingStrategyAgent(openai_service)
         self.web_search_agent = WebSearchAgent(openai_service, tavily_service)
+        self.social_sentiment_agent = SocialSentimentAgent(openai_service, sentiment_service)
         
         # User learning levels (0-100)
         self.user_levels: Dict[str, int] = {}
@@ -136,6 +139,10 @@ class CoordinatorAgent:
         if any(word in message_lower for word in ["what is", "explain", "how does", "why", "learn", "understand"]):
             return "education"
         
+        # Social sentiment questions
+        if any(word in message_lower for word in ["social", "sentiment", "reddit", "farcaster", "community buzz", "trending", "social media", "community", "hype", "fomo", "fud"]):
+            return "social_sentiment"
+        
         # Web search questions (latest news, current events)
         if any(word in message_lower for word in ["news", "latest", "recent", "today", "current", "happening"]):
             return "web_search"
@@ -183,6 +190,14 @@ class CoordinatorAgent:
             
             elif intent == "web_search":
                 return await self.web_search_agent.process(
+                    message=message,
+                    user_id=user_id,
+                    learning_level=learning_level,
+                    context=context
+                )
+            
+            elif intent == "social_sentiment":
+                return await self.social_sentiment_agent.process(
                     message=message,
                     user_id=user_id,
                     learning_level=learning_level,
@@ -293,6 +308,7 @@ class CoordinatorAgent:
         This orchestrates multiple agents to provide deep token analysis:
         1. Research Agent - Gathers on-chain data (liquidity, holders, volume)
         2. Web Search Agent - Finds team info, news, social sentiment
+        2.5. Social Sentiment Agent - Analyzes social sentiment and community buzz
         3. Trading Strategy Agent - Analyzes price patterns and trading signals
         4. Educator Agent - Synthesizes everything into clear, actionable insights
         """
@@ -332,6 +348,23 @@ class CoordinatorAgent:
                 logger.warning(f"Web search failed: {e}")
                 web_research = "I couldn't find recent news, but I'll analyze the on-chain data."
             
+            # Step 2.5: Social Sentiment Agent - Community sentiment analysis
+            social_sentiment_context = {
+                **(context or {}),
+                'focus': 'social_sentiment',
+                'token_data': token_data
+            }
+            try:
+                social_analysis = await self.social_sentiment_agent.process(
+                    message=f"Analyze the social sentiment and community buzz for {token_symbol}. What's the community saying on Reddit, Farcaster, and other platforms? Are there any sentiment shifts or anomalies?",
+                    user_id=user_id,
+                    learning_level=learning_level,
+                    context=social_sentiment_context
+                )
+            except Exception as e:
+                logger.warning(f"Social sentiment analysis failed: {e}")
+                social_analysis = "I couldn't analyze social sentiment, but I'll focus on the other data."
+            
             # Step 3: Trading Strategy Agent - Price analysis
             trading_context = {
                 **(context or {}),
@@ -350,12 +383,13 @@ class CoordinatorAgent:
                 **(context or {}),
                 'on_chain_analysis': on_chain_analysis,
                 'web_research': web_research,
+                'social_analysis': social_analysis,
                 'price_analysis': price_analysis,
                 'token_data': token_data
             }
             
             final_analysis = await self.educator_agent.process(
-                message=f"Based on all the research about {token_symbol}, give me a comprehensive analysis that explains: 1) Liquidity and holder analysis, 2) Recent news/developments, 3) Price trends and trading signals, 4) Overall assessment with specific risks and opportunities. Be direct and specific.",
+                message=f"Based on all the research about {token_symbol}, give me a comprehensive analysis that explains: 1) Liquidity and holder analysis, 2) Recent news/developments, 3) Social sentiment and community buzz, 4) Price trends and trading signals, 5) Overall assessment with specific risks and opportunities. Be direct and specific.",
                 user_id=user_id,
                 learning_level=learning_level,
                 context=synthesis_context
