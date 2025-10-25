@@ -158,3 +158,21 @@ screenshot*.png
 # Planning documents (unless they're important)
 *.plan.md
 
+# ============================================
+# Development Scripts & Tools
+# ============================================
+# Deployment scripts
+deploy-gcloud.ps1
+run_tests.bat
+run_tests.sh
+backend/test-connection.ps1
+
+# SQL files
+backend/grant_iam_permissions.sql
+backend/grant_permissions.sql
+
+# Test files
+backend/test_cloudsql_connection.py
+backend/test_feedback_system.py
+backend/run_connection_test.py
+

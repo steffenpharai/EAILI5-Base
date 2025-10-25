@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useSession } from '../contexts/SessionContext';
 import { useMobile } from '../hooks/useMobile';
+import { useMobileContainer } from '../hooks/useMobileLayout';
 import { useTokenData, Token } from '../hooks/useTokenData';
 import TopBar from './TopBar';
 import TokenList from './TokenList';
@@ -16,6 +17,7 @@ const ProfessionalDashboard: React.FC = () => {
   const { currentView, selectedToken, selectToken, setView } = useNavigation();
   const { sessionToken, isSessionReady } = useSession();
   const isMobile = useMobile();
+  const { getContainerStyles, getContentStyles } = useMobileContainer();
   const [category, setCategory] = useState('top15');
   const { tokens, loading, refetch } = useTokenData(category);
   const [lastAIMessageId, setLastAIMessageId] = useState<string | undefined>();
@@ -66,7 +68,9 @@ const ProfessionalDashboard: React.FC = () => {
       paddingLeft: 'env(safe-area-inset-left)',
       paddingRight: 'env(safe-area-inset-right)',
     }),
-  };
+    // Mobile layout system integration
+    ...(isMobile && getContainerStyles()),
+  } as React.CSSProperties;
 
   const dynamicMainAreaStyles: React.CSSProperties = {
     flex: 1,
@@ -86,7 +90,9 @@ const ProfessionalDashboard: React.FC = () => {
       // Ensure content doesn't get hidden behind overlays
       paddingBottom: '80px', // Space for AI Insights panel
     }),
-  };
+    // Mobile layout system integration
+    ...(isMobile && getContentStyles()),
+  } as React.CSSProperties;
 
   return (
     <div style={dashboardStyles}>

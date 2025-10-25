@@ -29,6 +29,15 @@ const TopBar: React.FC<TopBarProps> = ({ portfolioBalance = 100.00, onMobileToke
     borderBottom: `1px solid ${theme.border.primary}`,
     minHeight: '56px',
     position: 'relative',
+    // Mobile-specific positioning
+    ...(window.innerWidth < 768 && {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 1100,
+      width: '100%',
+    }),
   };
 
   const logoStyles: React.CSSProperties = {
@@ -59,7 +68,7 @@ const TopBar: React.FC<TopBarProps> = ({ portfolioBalance = 100.00, onMobileToke
     display: isMobileMenuOpen ? 'flex' : 'none',
     flexDirection: 'column',
     gap: '12px',
-    zIndex: 1000,
+    zIndex: 1085, // Below TopBar but above other elements
   };
 
   const rightSectionStyles: React.CSSProperties = {

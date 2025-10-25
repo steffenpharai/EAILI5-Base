@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
+import { useSession } from '../contexts/SessionContext';
+import { useChat } from '../hooks/useChat';
 import { TrendingUp, TrendingDown, Users, MessageCircle, Activity, AlertTriangle, Brain, BarChart3 } from 'lucide-react';
 import { ProBadge } from './pro';
 
@@ -93,12 +95,18 @@ interface EnhancedTokenSentimentProps {
 
 const EnhancedTokenSentiment: React.FC<EnhancedTokenSentimentProps> = ({ tokenAddress, tokenSymbol }) => {
   const { theme } = useTheme();
+  const { sessionToken, isSessionReady } = useSession();
+  const { sendMessageStream, isConnected, connect } = useChat();
   const [sentimentData, setSentimentData] = useState<SentimentData | null>(null);
   const [enhancedSentimentData, setEnhancedSentimentData] = useState<EnhancedSentimentData | null>(null);
   const [timelineData, setTimelineData] = useState<TimelineData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'narrative'>('overview');
+  
+  // AI Reasoning streaming state
+  const [aiReasoning, setAiReasoning] = useState<string>('');
+  const [isStreamingReasoning, setIsStreamingReasoning] = useState(false);
 
   const fetchSentimentData = useCallback(async () => {
     setLoading(true);
@@ -149,6 +157,64 @@ const EnhancedTokenSentiment: React.FC<EnhancedTokenSentimentProps> = ({ tokenAd
       setLoading(false);
     }
   }, [tokenAddress]);
+
+  // Connect WebSocket when session is ready
+  useEffect(() => {
+    if (isSessionReady && sessionToken) {
+      try {
+        connect(sessionToken);
+      } catch (error) {
+        console.error('Failed to connect WebSocket:', error);
+      }
+    }
+  }, [isSessionReady, sessionToken, connect]);
+
+  const fetchAIReasoning = useCallback(async () => {
+    if (!sessionToken || !isSessionReady) {
+      setError('Session not ready for AI reasoning');
+      return;
+    }
+    
+    setIsStreamingReasoning(true);
+    setAiReasoning(''); // Clear previous reasoning
+    
+    try {
+      await sendMessageStream(
+        `Analyze the social sentiment for ${tokenSymbol || 'this token'}. What's the community saying on Reddit, Farcaster, and other platforms?`,
+        'anonymous',
+        sessionToken,
+        (chunk: string) => {
+          setAiReasoning(prev => prev + chunk);
+        },
+        (agent: string, status: string) => {
+          // Handle agent status updates if needed
+          console.log(`Agent ${agent}: ${status}`);
+        },
+        (suggestions: string[], learning_level: number) => {
+          // Handle suggestions and learning level
+          console.log('Suggestions:', suggestions);
+        },
+        (error: string) => {
+          console.error('AI Reasoning stream error:', error);
+          setError(`AI reasoning error: ${error}`);
+        },
+        0, // learning_level
+        {
+          intent: "social_sentiment",
+          token_address: tokenAddress,
+          token_symbol: tokenSymbol,
+          token_data: {
+            address: tokenAddress,
+            symbol: tokenSymbol
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Failed to stream AI reasoning:', error);
+      setError('Failed to get AI reasoning');
+      setIsStreamingReasoning(false);
+    }
+  }, [tokenAddress, tokenSymbol, sessionToken, isSessionReady, sendMessageStream]);
 
   const fetchTimelineData = useCallback(async () => {
     setLoading(true);
@@ -669,10 +735,53 @@ const EnhancedTokenSentiment: React.FC<EnhancedTokenSentimentProps> = ({ tokenAd
                   padding: '14px',
                   background: `${theme.accent.blue}15`,
                   borderRadius: '6px',
-                  borderLeft: `3px solid ${theme.accent.blue}`
+                  borderLeft: `3px solid ${theme.accent.blue}`,
+                  whiteSpace: 'pre-wrap',
+                  minHeight: '100px'
                 }}>
-                  {enhancedSentimentData.ai_narrative || 'Generating AI narrative...'}
+                  {isStreamingReasoning && (
+                    <div style={{
+                      color: theme.accent.blue,
+                      fontSize: '12px',
+                      marginBottom: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      <div style={{
+                        width: '10px',
+                        height: '10px',
+                        border: `2px solid ${theme.accent.blue}`,
+                        borderTop: '2px solid transparent',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite'
+                      }} />
+                      Analyzing sentiment...
+                    </div>
+                  )}
+                  {aiReasoning || enhancedSentimentData.ai_narrative || 'Click "Analyze" to get AI insights'}
                 </div>
+                
+                {!isStreamingReasoning && !aiReasoning && (
+                  <button
+                    onClick={fetchAIReasoning}
+                    disabled={!isConnected || !sessionToken}
+                    style={{
+                      marginTop: '12px',
+                      padding: '8px 16px',
+                      background: theme.accent.blue,
+                      color: theme.text.inverted,
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: isConnected && sessionToken ? 'pointer' : 'not-allowed',
+                      opacity: isConnected && sessionToken ? 1 : 0.5,
+                      fontSize: '14px',
+                      fontWeight: 500
+                    }}
+                  >
+                    {!isConnected ? 'Connecting...' : !sessionToken ? 'Session required' : 'Analyze Sentiment'}
+                  </button>
+                )}
               </div>
 
               {/* Anomalies */}

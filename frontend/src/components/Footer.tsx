@@ -23,6 +23,12 @@ const Footer: React.FC = () => {
     fontFamily: 'Inter, system-ui, sans-serif',
     color: theme.text.secondary,
     zIndex: 1000, // Ensure footer is above all content
+    // Mobile-specific safe area support
+    ...(isMobile && {
+      zIndex: 1070,
+      paddingBottom: 'max(8px, env(safe-area-inset-bottom))',
+      height: 'calc(32px + max(8px, env(safe-area-inset-bottom)))',
+    }),
   };
 
   const leftSectionStyles: React.CSSProperties = {
@@ -60,7 +66,7 @@ const Footer: React.FC = () => {
       <div style={rightSectionStyles}>
         <span>Built by</span>
         <a
-          href="https://basescan.org/address/0x1234567890123456789012345678901234567890"
+          href="https://base.app/profile/stefo0"
           target="_blank"
           rel="noopener noreferrer"
           style={linkStyles}

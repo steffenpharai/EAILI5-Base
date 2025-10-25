@@ -2,12 +2,14 @@ import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation } from '../contexts/NavigationContext';
+import { useMobile } from '../hooks/useMobile';
 import { useAccount } from 'wagmi';
 import LearningDashboard from './LearningDashboard';
 
 const LearningView: React.FC = () => {
   const { theme } = useTheme();
   const { goHome } = useNavigation();
+  const isMobile = useMobile();
   const { address } = useAccount();
 
   const containerStyles: React.CSSProperties = {
@@ -21,9 +23,15 @@ const LearningView: React.FC = () => {
   const headerStyles: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    padding: '20px',
+    padding: isMobile ? '16px' : '20px',
     borderBottom: `1px solid ${theme.border.primary}`,
     background: theme.surface.primary,
+    // Mobile-specific adjustments
+    ...(isMobile && {
+      paddingTop: 'max(16px, env(safe-area-inset-top))',
+      paddingLeft: 'max(16px, env(safe-area-inset-left))',
+      paddingRight: 'max(16px, env(safe-area-inset-right))',
+    }),
   };
 
   const backButtonStyles: React.CSSProperties = {
@@ -43,7 +51,13 @@ const LearningView: React.FC = () => {
   const contentStyles: React.CSSProperties = {
     flex: 1,
     overflow: 'auto',
-    padding: '20px',
+    padding: isMobile ? '16px' : '20px',
+    // Mobile-specific adjustments
+    ...(isMobile && {
+      paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+      paddingLeft: 'max(16px, env(safe-area-inset-left))',
+      paddingRight: 'max(16px, env(safe-area-inset-right))',
+    }),
   };
 
   return (

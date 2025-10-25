@@ -127,19 +127,21 @@ class SentimentService:
     async def _get_coingecko_sentiment(self, token_address: str, token_symbol: str = None) -> Dict[str, Any]:
         """Get sentiment data from CoinGecko community stats"""
         try:
-            # For now, use a simplified approach since we don't have direct access to token service
-            # In production, this would be properly integrated with the token service
-            logger.info(f"CoinGecko sentiment analysis for {token_address} - using simplified approach")
+            # Get token data from CoinGecko service
+            token_info = await self.coingecko_service.get_token_info(token_address)
             
-            # Return mock CoinGecko sentiment data
+            if not token_info:
+                logger.warning(f"No CoinGecko data found for {token_address}")
+                return {}
+            
             return {
-                "engagement_score": 1000,
-                "trending_rank": 0,
+                "engagement_score": token_info.get("community_score", 0) * 1000,
+                "trending_rank": token_info.get("market_cap_rank", 0),
                 "community_data": {
-                    "twitter_followers": 50000,
-                    "reddit_subscribers": 10000,
-                    "reddit_active_users": 1000,
-                    "telegram_users": 5000
+                    "twitter_followers": token_info.get("community_data", {}).get("twitter_followers", 0),
+                    "reddit_subscribers": token_info.get("community_data", {}).get("reddit_subscribers", 0),
+                    "reddit_active_users": token_info.get("community_data", {}).get("reddit_active_users", 0),
+                    "telegram_users": token_info.get("community_data", {}).get("telegram_users", 0)
                 }
             }
             
@@ -442,39 +444,41 @@ class SentimentService:
             Dict containing time series sentiment data
         """
         try:
-            # This would typically query a database for historical sentiment data
-            # For now, we'll simulate with current data and add timestamps
+            # TODO: Query historical sentiment from database (future enhancement)
+            # For now, return current sentiment snapshot only
             current_sentiment = await self.get_multi_platform_sentiment(token_address)
             
-            # Simulate time series data (in production, this would come from database)
-            time_series = []
-            base_time = datetime.now() - timedelta(hours=hours)
-            
-            for i in range(hours):
-                timestamp = base_time + timedelta(hours=i)
-                # Simulate some variation in sentiment over time
-                variation = (i % 3 - 1) * 0.1  # Simple pattern for demo
-                
-                time_series.append({
-                    "timestamp": timestamp.isoformat(),
-                    "sentiment_score": current_sentiment.get("sentiment_metrics", {}).get("overall_score", 0) + variation,
-                    "social_volume": current_sentiment.get("sentiment_metrics", {}).get("total_volume", 0) + (i * 10),
-                    "platforms": {
-                        "reddit": {"score": 0.2 + variation, "volume": 50 + i},
-                        "farcaster": {"score": 0.1 + variation, "volume": 30 + i},
-                        "news": {"score": 0.0 + variation, "volume": 20 + i}
+            # Return single data point (current state)
+            time_series = [{
+                "timestamp": datetime.now().isoformat(),
+                "sentiment_score": current_sentiment.get("sentiment_metrics", {}).get("overall_score", 0),
+                "social_volume": current_sentiment.get("sentiment_metrics", {}).get("total_volume", 0),
+                "platforms": {
+                    "reddit": {
+                        "score": current_sentiment.get("platform_breakdown", {}).get("reddit", {}).get("sentiment", 0), 
+                        "volume": current_sentiment.get("platform_breakdown", {}).get("reddit", {}).get("posts", 0)
+                    },
+                    "farcaster": {
+                        "score": current_sentiment.get("platform_breakdown", {}).get("farcaster", {}).get("sentiment", 0), 
+                        "volume": current_sentiment.get("platform_breakdown", {}).get("farcaster", {}).get("casts", 0)
+                    },
+                    "news": {
+                        "score": current_sentiment.get("platform_breakdown", {}).get("news", {}).get("sentiment", 0), 
+                        "volume": current_sentiment.get("platform_breakdown", {}).get("news", {}).get("mentions", 0)
                     }
-                })
+                }
+            }]
             
             return {
                 "token_address": token_address,
                 "time_series": time_series,
                 "period_hours": hours,
-                "generated_at": datetime.now().isoformat()
+                "generated_at": datetime.now().isoformat(),
+                "note": "Historical data not yet available - showing current snapshot"
             }
             
         except Exception as e:
-            logger.error(f"Error generating sentiment time series: {e}")
+            logger.error(f"Timeline generation failed: {e}")
             return {"error": str(e)}
     
     async def get_social_events_timeline(self, token_address: str, hours: int = 24) -> Dict[str, Any]:

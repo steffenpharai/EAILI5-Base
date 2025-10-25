@@ -11,20 +11,9 @@ AI-powered crypto education platform built on Base L2. Uses multi-agent AI syste
 
 ## 🏆 Base Batches 002 Submission
 
-**Status**: Ready for Submission ✅  
 **Repository**: [https://github.com/steffenpharai/EAILI5-Base](https://github.com/steffenpharai/EAILI5-Base)  
 **Live App**: [https://base.explainailikeimfive.com](https://base.explainailikeimfive.com)  
 **Team**: stefo0.base.eth
-
-### Submission Requirements Status
-
-- ✅ **Functioning onchain app** - Deployed at https://base.explainailikeimfive.com
-- ✅ **Open-source repository** - Complete source code at https://github.com/steffenpharai/EAILI5-Base
-- ✅ **Base Sepolia deployment** - Tested on testnet with transaction proof
-- ✅ **Smart Wallet integration** - Coinbase Wallet with smartWalletOnly preference
-- ✅ **Basenames support** - OnchainKit integration for Base naming service
-- ⏳ **Demo video** - 1-minute walkthrough (see VIDEO_SCRIPT.md)
-- ⏳ **Farcaster manifest** - Signed at base.dev (pending user signature)
 
 ## 🚀 Quick Start
 
@@ -436,78 +425,22 @@ FRONTEND_PORT=3000
 - `react-hot-toast==^2.4.0` - Toast notifications
 - `axios==^1.6.0` - HTTP client
 
-## 🚢 Production Deployment (Google Cloud Run)
+## 🚢 Production Deployment
 
-### Quick Deploy
-
-```powershell
-# Navigate to Base Mini App directory
-cd apps/base
-
-# Deploy both backend and frontend
-./deploy-gcloud.ps1
-```
-
-### Prerequisites
-
-- Google Cloud SDK (gcloud CLI) installed
-- Access to `eaili5` GCP project
-- API keys configured in `.env` file
-
-### Deployment Steps
-
-1. **Setup Environment**
-   ```powershell
-   # Copy environment template
-   Copy-Item .env.example .env
-   
-   # Edit with your API keys
-   notepad .env
-   ```
-
-2. **Configure Secrets**
-   ```powershell
-   # Setup Google Cloud Secret Manager
-   # See SECRETS_SETUP.md for details
-   ./setup-secrets.ps1
-   ```
-
-3. **Deploy Services**
-   ```powershell
-   # Switch to eaili5 project
-   gcloud config set project eaili5
-   
-   # Deploy with script
-   ./deploy-gcloud.ps1
-   ```
-
-4. **Configure Custom Domains**
-   ```powershell
-   # Map domains to Cloud Run services
-   gcloud run domain-mappings create \
-     --service eaili5-base-frontend \
-     --domain base.explainailikeimfive.com \
-     --region us-central1
-   
-   gcloud run domain-mappings create \
-     --service eaili5-base-backend \
-     --domain base-api.explainailikeimfive.com \
-     --region us-central1
-   ```
-
-### Production URLs
+The application is currently deployed on Google Cloud Run:
 
 - **Frontend**: https://base.explainailikeimfive.com
 - **Backend API**: https://base-api.explainailikeimfive.com
 - **Health Check**: https://base-api.explainailikeimfive.com/health
 
-### Detailed Guides
+### Deployment Architecture
 
-- [DEPLOYMENT.md](./DEPLOYMENT.md) - Complete deployment guide
-- [SECURITY.md](./SECURITY.md) - Security best practices
-- [SECRETS_SETUP.md](./SECRETS_SETUP.md) - Secret Manager configuration
-- [TESTNET_DEPLOYMENT.md](./TESTNET_DEPLOYMENT.md) - Base Sepolia testing
-- [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) - Architecture overview
+- **Frontend**: React SPA served via Cloud Run with Nginx
+- **Backend**: FastAPI application with LangGraph AI agents
+- **Database**: Cloud SQL PostgreSQL with Redis caching
+- **Infrastructure**: Google Cloud Run with auto-scaling
+
+For detailed deployment instructions, see the [Google Cloud Run documentation](https://cloud.google.com/run/docs).
 
 ## 📚 API Endpoints
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, PieChart, Plus, Minus } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation } from '../contexts/NavigationContext';
+import { useMobile } from '../hooks/useMobile';
 import { useAccount } from 'wagmi';
 import { usePortfolio } from '../hooks/usePortfolio';
 import { usePortfolioWebSocket } from '../hooks/usePortfolioWebSocket';
@@ -20,6 +21,7 @@ interface PortfolioHolding {
 const PortfolioView: React.FC = () => {
   const { theme } = useTheme();
   const { goHome } = useNavigation();
+  const isMobile = useMobile();
   const { address } = useAccount();
   const { getPortfolio, simulateTrade, getPortfolioPerformance, getTradeHistory, isLoading } = usePortfolio();
   const { isConnected: wsConnected, portfolioData: wsPortfolioData, error: wsError } = usePortfolioWebSocket(address || 'anonymous');
@@ -97,9 +99,15 @@ const PortfolioView: React.FC = () => {
   const headerStyles: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    padding: '20px',
+    padding: isMobile ? '16px' : '20px',
     borderBottom: `1px solid ${theme.border.primary}`,
     background: theme.surface.primary,
+    // Mobile-specific adjustments
+    ...(isMobile && {
+      paddingTop: 'max(16px, env(safe-area-inset-top))',
+      paddingLeft: 'max(16px, env(safe-area-inset-left))',
+      paddingRight: 'max(16px, env(safe-area-inset-right))',
+    }),
   };
 
   const backButtonStyles: React.CSSProperties = {
@@ -119,7 +127,13 @@ const PortfolioView: React.FC = () => {
   const contentStyles: React.CSSProperties = {
     flex: 1,
     overflow: 'auto',
-    padding: '20px',
+    padding: isMobile ? '16px' : '20px',
+    // Mobile-specific adjustments
+    ...(isMobile && {
+      paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+      paddingLeft: 'max(16px, env(safe-area-inset-left))',
+      paddingRight: 'max(16px, env(safe-area-inset-right))',
+    }),
   };
 
   const portfolioHeaderStyles: React.CSSProperties = {

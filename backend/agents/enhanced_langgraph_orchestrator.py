@@ -883,75 +883,123 @@ class EnhancedLangGraphOrchestrator:
             yield {"type": "status", "agent": "coordinator", "message": "Understanding your request..."}
             intent = await coordinator.analyze_intent(message, context)
             
-            # Route to appropriate agent
-            agent_name = self._get_agent_from_intent(intent)
-            yield {"type": "status", "agent": "coordinator", "message": f"Routing to {agent_name} agent..."}
-            
-            # Get the specialist agent
-            specialist_agent = self.agents.get(agent_name.split()[0].lower())  # Extract first word (educator, research, etc.)
-            if not specialist_agent:
-                specialist_agent = self.agents.get("educator")  # Fallback to educator
-            
-            # Emit agent-specific status
-            agent_status_messages = {
-                "educator": "Preparing explanation...",
-                "research": "Fetching token data...",
-                "portfolio": "Calculating portfolio metrics...",
-                "trading_strategy": "Analyzing trading strategy...",
-                "web_search": "Searching latest crypto news..."
-            }
-            
-            agent_key = agent_name.split()[0].lower()
-            status_msg = agent_status_messages.get(agent_key, "Processing...")
-            yield {"type": "status", "agent": agent_key, "message": status_msg}
-            
-            # Build enhanced context with conversation history
-            enhanced_context = {
-                **context,
-                "conversation_history": {},
-                "previous_messages": [],
-                "recent_messages": []
-            }
-            
-            # Process message through specialist agent
-            learning_level = kwargs.get("learning_level", 0)
-            
-            # Check if it's the educator agent and use streaming
-            if hasattr(specialist_agent, "process_stream"):
-                # Agent supports streaming - yield chunks directly (OpenAI handles tokenization)
-                async for chunk in specialist_agent.process_stream(
-                    message=message,
-                    user_id=user_id,
-                    learning_level=learning_level,
-                    context=enhanced_context
-                ):
-                    yield chunk
-            else:
-                # Agent doesn't support streaming, use regular method and stream the result
-                response = await specialist_agent.process(
+            # Check if this is token analysis with token_data in context
+            token_data = kwargs.get('token_data') or context.get('token_data')
+            if intent == "token_analysis" and token_data:
+                # Use multi-agent synthesis for comprehensive token analysis
+                yield {"type": "status", "agent": "coordinator", "message": "Initiating comprehensive token analysis..."}
+                
+                # Build enhanced context with token data
+                enhanced_context = {
+                    **context,
+                    "token_data": token_data,
+                    "conversation_history": {},
+                    "previous_messages": [],
+                    "recent_messages": []
+                }
+                
+                # Call coordinator's comprehensive analysis method
+                learning_level = kwargs.get("learning_level", 0)
+                final_analysis = await coordinator.analyze_token_comprehensive(
                     message=message,
                     user_id=user_id,
                     learning_level=learning_level,
                     context=enhanced_context
                 )
                 
-                # Stream the response as-is (don't break into characters)
-                if isinstance(response, str):
-                    yield {"type": "chunk", "content": response}
-                elif isinstance(response, dict):
-                    response_text = response.get("message", "")
-                    yield {"type": "chunk", "content": response_text}
-            
-            # Generate suggestions based on intent
-            suggestions = await coordinator._generate_suggestions(intent, learning_level, context)
-            
-            # Emit complete signal with metadata
-            yield {
-                "type": "complete",
-                "suggestions": suggestions,
-                "learning_level": learning_level,
-                "messageId": message_id
-            }
+                # Stream the comprehensive analysis
+                yield {"type": "chunk", "content": final_analysis}
+                
+                # Generate context-aware suggestions based on analysis
+                suggestions = await coordinator._generate_suggestions(
+                    intent="token_analysis",
+                    learning_level=learning_level,
+                    context={
+                        **enhanced_context,
+                        "analysis_complete": True,
+                        "token_data": token_data
+                    }
+                )
+                
+                # Emit complete signal with metadata
+                yield {
+                    "type": "complete",
+                    "suggestions": suggestions,
+                    "learning_level": learning_level,
+                    "messageId": message_id
+                }
+                
+            else:
+                # Single agent routing for non-token analysis
+                agent_name = self._get_agent_from_intent(intent)
+                yield {"type": "status", "agent": "coordinator", "message": f"Routing to {agent_name} agent..."}
+                
+                # Get the specialist agent
+                specialist_agent = self.agents.get(agent_name.split()[0].lower())  # Extract first word (educator, research, etc.)
+                if not specialist_agent:
+                    specialist_agent = self.agents.get("educator")  # Fallback to educator
+                
+                # Emit agent-specific status
+                agent_status_messages = {
+                    "educator": "Preparing explanation...",
+                    "research": "Fetching token data...",
+                    "portfolio": "Calculating portfolio metrics...",
+                    "trading_strategy": "Analyzing trading strategy...",
+                    "web_search": "Searching latest crypto news...",
+                    "social_sentiment": "Analyzing social sentiment..."
+                }
+                
+                agent_key = agent_name.split()[0].lower()
+                status_msg = agent_status_messages.get(agent_key, "Processing...")
+                yield {"type": "status", "agent": agent_key, "message": status_msg}
+                
+                # Build enhanced context with conversation history
+                enhanced_context = {
+                    **context,
+                    "conversation_history": {},
+                    "previous_messages": [],
+                    "recent_messages": []
+                }
+                
+                # Process message through specialist agent
+                learning_level = kwargs.get("learning_level", 0)
+                
+                # Check if it's the educator agent and use streaming
+                if hasattr(specialist_agent, "process_stream"):
+                    # Agent supports streaming - yield chunks directly
+                    async for chunk in specialist_agent.process_stream(
+                        message=message,
+                        user_id=user_id,
+                        learning_level=learning_level,
+                        context=enhanced_context
+                    ):
+                        yield chunk
+                else:
+                    # Agent doesn't support streaming, use regular method and stream the result
+                    response = await specialist_agent.process(
+                        message=message,
+                        user_id=user_id,
+                        learning_level=learning_level,
+                        context=enhanced_context
+                    )
+                    
+                    # Stream the response as-is (don't break into characters)
+                    if isinstance(response, str):
+                        yield {"type": "chunk", "content": response}
+                    elif isinstance(response, dict):
+                        response_text = response.get("message", "")
+                        yield {"type": "chunk", "content": response_text}
+                
+                # Generate suggestions based on intent
+                suggestions = await coordinator._generate_suggestions(intent, learning_level, context)
+                
+                # Emit complete signal with metadata
+                yield {
+                    "type": "complete",
+                    "suggestions": suggestions,
+                    "learning_level": learning_level,
+                    "messageId": message_id
+                }
             
         except Exception as e:
             logger.error(f"Error in streaming processing: {e}")
@@ -1062,6 +1110,34 @@ class EnhancedLangGraphOrchestrator:
     ) -> Dict[str, Any]:
         """Analyze intent with enhanced context awareness"""
         try:
+            # PRIORITY 1: Check if context explicitly provides intent
+            if context and context.get('intent'):
+                explicit_intent = context['intent']
+                logger.info(f"Using explicit intent from context: {explicit_intent}")
+                
+                # Map explicit intents to required agents
+                agent_mapping = {
+                    "social_sentiment": ["social_sentiment"],
+                    "token_analysis": ["research", "web_search", "social_sentiment", "trading_strategy"],
+                    "trading_strategy": ["trading_strategy"],
+                    "portfolio": ["portfolio"],
+                    "research": ["research"],
+                    "web_search": ["web_search"],
+                    "education": ["educator"]
+                }
+                
+                required_agents = agent_mapping.get(explicit_intent, ["educator"])
+                
+                return {
+                    "intents": [explicit_intent],
+                    "confidence_scores": {explicit_intent: 1.0},
+                    "required_agents": required_agents,
+                    "needs_clarification": False,
+                    "primary_topic": explicit_intent,
+                    "engagement_level": "high" if len(required_agents) > 1 else "medium"
+                }
+            
+            # PRIORITY 2: Keyword detection (existing logic)
             message_lower = message.lower()
             
             # Determine intent based on keywords and context

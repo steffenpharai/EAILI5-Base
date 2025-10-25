@@ -4,6 +4,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useSession } from '../contexts/SessionContext';
 import { useMobile } from '../hooks/useMobile';
+import { useMobileChatInput } from '../hooks/useMobileLayout';
 import { useChat } from '../hooks/useChat';
 import { ProButton, ProInput } from './pro';
 import SuggestionChips from './SuggestionChips';
@@ -36,6 +37,7 @@ const WelcomeLanding: React.FC<WelcomeLandingProps> = ({ onAIMessageGenerated })
   const { setView } = useNavigation();
   const { sessionToken, isSessionReady } = useSession();
   const isMobile = useMobile();
+  const { getInputStyles } = useMobileChatInput();
   const { sendMessageStream, isConnected, connect } = useChat();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -367,11 +369,13 @@ const WelcomeLanding: React.FC<WelcomeLandingProps> = ({ onAIMessageGenerated })
     bottom: isMobile ? '32px' : 'auto', // Account for footer height
     zIndex: isMobile ? 1000 : 'auto',
     borderTop: isMobile ? `1px solid ${theme.border.primary}` : 'none',
+    // Mobile layout system integration
+    ...(isMobile && getInputStyles(true)), // Use sticky positioning
   };
 
   const suggestionsStyles: React.CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: window.innerWidth < 768 ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))',
+    gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))',
     gap: '12px',
     marginBottom: '0',
     padding: '0',
@@ -457,7 +461,7 @@ const WelcomeLanding: React.FC<WelcomeLandingProps> = ({ onAIMessageGenerated })
               </div>
               
               <h1 style={{ 
-                fontSize: window.innerWidth < 768 ? '24px' : '32px', 
+                fontSize: isMobile ? '24px' : '32px', 
                 fontWeight: '700', 
                 color: theme.text.primary,
                 marginBottom: '20px',
@@ -583,7 +587,7 @@ const WelcomeLanding: React.FC<WelcomeLandingProps> = ({ onAIMessageGenerated })
                 </p>
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: window.innerWidth < 768 ? '1fr' : 'repeat(2, 1fr)',
+                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
                   gap: '12px',
                   marginBottom: '0'
                 }}>

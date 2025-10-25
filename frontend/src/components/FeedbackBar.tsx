@@ -96,6 +96,15 @@ const FeedbackBar: React.FC<FeedbackBarProps> = ({
         gap: '8px',
         position: 'relative',
         zIndex: 5,
+        // Mobile-specific positioning
+        ...(window.innerWidth < 768 && {
+          position: 'fixed',
+          top: '56px', // Below TopBar
+          left: 0,
+          right: 0,
+          zIndex: 1080,
+          width: '100%',
+        }),
       };
 
       const leftSectionStyles: React.CSSProperties = {

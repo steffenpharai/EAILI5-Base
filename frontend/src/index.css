@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import mobile layout system */
+@import './styles/mobileLayout.css';
+
 /* EAILI5 Design System - Global Design Tokens */
 :root {
   /* Color Palette */
@@ -229,8 +232,34 @@ code {
   animation: spin 1s linear infinite;
 }
 
-/* Responsive Design Helpers */
-@media (max-width: 640px) {
+/* Mobile-specific global styles */
+@media (max-width: 767px) {
+  /* Reset body for mobile */
+  body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Touch-friendly interactions */
+  * {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Prevent zoom on input focus (iOS) */
+  input, textarea, select {
+    font-size: 16px;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Mobile-specific spacing adjustments */
   :root {
     --space-md: 0.75rem;
     --space-lg: 1rem;

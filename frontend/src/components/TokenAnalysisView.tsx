@@ -3,6 +3,8 @@ import { ArrowLeft, TrendingUp, TrendingDown, Shield, Users, DollarSign, Brain }
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useSession } from '../contexts/SessionContext';
+import { useMobile } from '../hooks/useMobile';
+import { useMobileChatInput } from '../hooks/useMobileLayout';
 import { useChat } from '../hooks/useChat';
 import { ProButton, ProBadge } from './pro';
 import TradingChart from './TradingChart';
@@ -37,6 +39,8 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
   const { theme } = useTheme();
   const { goHome } = useNavigation();
   const { sessionToken, isSessionReady } = useSession();
+  const isMobile = useMobile();
+  const { getInputStyles } = useMobileChatInput();
   const { sendMessageStream, isConnected, connect } = useChat();
   const [activeTab, setActiveTab] = useState<'chat' | 'learn' | 'insights'>('chat');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -497,19 +501,8 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
     display: 'flex',
     gap: '8px',
     alignItems: 'center',
-    // Mobile optimizations
-    ...(window.innerWidth < 768 && {
-      position: 'fixed',
-      bottom: '0',
-      left: '0',
-      right: '0',
-      padding: '16px',
-      background: theme.surface.primary,
-      borderTop: `1px solid ${theme.border.primary}`,
-      zIndex: 1000,
-      // Safe area for notched devices
-      paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
-    }),
+    // Mobile optimizations using mobile layout system
+    ...(isMobile && getInputStyles(true)), // Use sticky positioning
   };
 
   // Always show full dashboard - removed simplified token-optional view
@@ -542,15 +535,15 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
         {/* Main Content - Mobile-first layout */}
         <div style={{
           ...mainContentStyles,
-          flexDirection: window.innerWidth < 768 ? 'column' : 'row',
+          flexDirection: isMobile ? 'column' : 'row',
         }}>
           {/* Left Section - General crypto info or chart placeholder */}
           <div style={{
             ...leftSectionStyles,
-            flex: window.innerWidth < 768 ? 'none' : '0 0 60%',
-            padding: window.innerWidth < 768 ? '16px' : '20px',
-            borderRight: window.innerWidth < 768 ? 'none' : `1px solid ${theme.border.primary}`,
-            borderBottom: window.innerWidth < 768 ? `1px solid ${theme.border.primary}` : 'none',
+            flex: isMobile ? 'none' : '0 0 60%',
+            padding: isMobile ? '16px' : '20px',
+            borderRight: isMobile ? 'none' : `1px solid ${theme.border.primary}`,
+            borderBottom: isMobile ? `1px solid ${theme.border.primary}` : 'none',
           }}>
             <div style={{
               display: 'flex',
@@ -588,8 +581,8 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
           {/* Right Section - Chat Interface */}
           <div style={{
             ...rightSectionStyles,
-            flex: window.innerWidth < 768 ? '1' : '0 0 40%',
-            padding: window.innerWidth < 768 ? '16px' : '20px',
+            flex: isMobile ? '1' : '0 0 40%',
+            padding: isMobile ? '16px' : '20px',
           }}>
             {/* General crypto stats or info */}
             <div style={statsGridStyles}>

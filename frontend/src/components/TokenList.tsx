@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, TrendingUp, TrendingDown, ChevronDown, X, ChevronLeft, ChevronRight, LayoutDashboard } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useMobile } from '../hooks/useMobile';
+import { useMobileDrawer } from '../hooks/useMobileLayout';
 import { useTokenWebSocket } from '../hooks/useTokenWebSocket';
 import { ProInput } from './pro';
 import { Token } from '../hooks/useTokenData';
@@ -33,6 +34,7 @@ const TokenList: React.FC<TokenListProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const isMobile = useMobile();
+  const { getDrawerStyles, getBackdropStyles } = useMobileDrawer();
   const { isConnected: wsConnected, tokenUpdates, error: wsError } = useTokenWebSocket();
   
   // Drawer state for desktop
@@ -94,19 +96,8 @@ const TokenList: React.FC<TokenListProps> = ({
     margin: '0',
     padding: '0',
     gap: 0,
-    // Mobile drawer styles
-    ...(isMobile && {
-      position: 'fixed',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      borderRadius: '16px 16px 0 0',
-      maxHeight: '80vh',
-      zIndex: 1000,
-      transform: isMobileDrawerOpen ? 'translateY(0)' : 'translateY(100%)',
-      transition: 'transform 0.3s ease-out',
-      boxShadow: '0 -4px 20px rgba(0,0,0,0.15)',
-    }),
+    // Mobile drawer styles using mobile layout system
+    ...(isMobile && getDrawerStyles(isMobileDrawerOpen)),
   };
 
   const headerStyles: React.CSSProperties = {
@@ -219,7 +210,11 @@ const TokenList: React.FC<TokenListProps> = ({
   // For mobile, keep the existing drawer behavior
   if (isMobile) {
     return (
-      <div style={containerStyles}>
+      <>
+        {/* Mobile backdrop */}
+        <div style={getBackdropStyles(isMobileDrawerOpen)} onClick={onMobileDrawerToggle} />
+        
+        <div style={containerStyles}>
         <div style={headerStyles}>
           {/* Mobile drawer handle */}
           <div style={{
@@ -430,7 +425,8 @@ const TokenList: React.FC<TokenListProps> = ({
             ))
           )}
         </div>
-      </div>
+        </div>
+      </>
     );
   }
 

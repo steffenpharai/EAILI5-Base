@@ -433,10 +433,11 @@ async def get_social_sentiment_analysis(token_address: str, hours: int = 24):
                 session_id=f"sentiment_{token_address}",
                 user_id="sentiment_user",
                 context={
+                    "intent": "social_sentiment",  # ✅ Explicit intent
                     "token_address": token_address,
                     "token_symbol": token_symbol,
-                    "sentiment_data": sentiment_data,
-                    "intent": "social_sentiment"
+                    "token_data": token_data,  # ✅ Add token data
+                    "sentiment_data": sentiment_data  # ✅ Pre-fetched data
                 }
             )
             

@@ -283,6 +283,18 @@ class CoordinatorAgent:
                 "What's market cap and why does it matter?"
             ]
         
+        elif intent == "token_analysis":
+            # Generate context-aware suggestions based on analysis findings
+            token_data = context.get('token_data', {}) if context else {}
+            token_symbol = token_data.get('symbol', 'this token')
+            
+            suggestions = [
+                f"Analyze social sentiment trends for {token_symbol}",
+                f"Check liquidity and holder distribution for {token_symbol}",
+                f"Review recent news and developments for {token_symbol}",
+                f"Assess technical price patterns for {token_symbol}"
+            ]
+        
         return suggestions[:3]  # Limit to 3 suggestions
     
     def get_user_learning_level(self, user_id: str) -> int:
@@ -349,10 +361,22 @@ class CoordinatorAgent:
                 web_research = "I couldn't find recent news, but I'll analyze the on-chain data."
             
             # Step 2.5: Social Sentiment Agent - Community sentiment analysis
+            # Fetch sentiment data ONCE to avoid duplicate API calls
+            sentiment_data = None
+            if token_address and self.sentiment_service:
+                try:
+                    sentiment_data = await self.sentiment_service.get_multi_platform_sentiment(
+                        token_address, token_symbol
+                    )
+                    logger.info(f"Fetched sentiment data for {token_symbol} (coordinator)")
+                except Exception as e:
+                    logger.warning(f"Failed to fetch sentiment data: {e}")
+            
             social_sentiment_context = {
                 **(context or {}),
                 'focus': 'social_sentiment',
-                'token_data': token_data
+                'token_data': token_data,
+                'sentiment_data': sentiment_data  # ✅ Pass pre-fetched data
             }
             try:
                 social_analysis = await self.social_sentiment_agent.process(
@@ -389,7 +413,7 @@ class CoordinatorAgent:
             }
             
             final_analysis = await self.educator_agent.process(
-                message=f"Based on all the research about {token_symbol}, give me a comprehensive analysis that explains: 1) Liquidity and holder analysis, 2) Recent news/developments, 3) Social sentiment and community buzz, 4) Price trends and trading signals, 5) Overall assessment with specific risks and opportunities. Be direct and specific.",
+                message=f"Based on all the research about {token_symbol}, provide a comprehensive analysis with specific data points: 1) Liquidity analysis: {on_chain_analysis} - cite specific numbers and red flags, 2) News developments: {web_research} - extract key events and timeline, 3) Social sentiment: {social_analysis} - include platform breakdowns and volume metrics, 4) Price action: {price_analysis} - reference technical levels and volume patterns, 5) Overall assessment: synthesize findings into clear bullish/bearish stance with specific risk factors and quantitative backing. Structure as professional analysis with metrics, not casual explanation.",
                 user_id=user_id,
                 learning_level=learning_level,
                 context=synthesis_context

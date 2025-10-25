@@ -331,6 +331,12 @@ const TradingChart: React.FC<TradingChartProps> = ({ token }) => {
     height: isMobile ? '64px' : '28px',  // Responsive height
     minHeight: isMobile ? '64px' : '28px',
     flexWrap: isMobile ? 'wrap' : 'nowrap',  // Allow wrapping on mobile
+    // Mobile-specific safe area support
+    ...(isMobile && {
+      paddingTop: 'max(8px, env(safe-area-inset-top))',
+      paddingLeft: 'max(12px, env(safe-area-inset-left))',
+      paddingRight: 'max(12px, env(safe-area-inset-right))',
+    }),
   };
 
   const tokenInfoStyles: React.CSSProperties = {
@@ -402,6 +408,14 @@ const TradingChart: React.FC<TradingChartProps> = ({ token }) => {
     touchAction: 'manipulation',
     WebkitTapHighlightColor: 'transparent',
     userSelect: 'none',
+    // Enhanced mobile touch targets
+    ...(isMobile && {
+      minHeight: '44px',
+      minWidth: '44px',
+      padding: '12px 16px',
+      fontSize: '14px',
+      fontWeight: '600',
+    }),
   });
 
   const formatPrice = (token: Token | null) => {
