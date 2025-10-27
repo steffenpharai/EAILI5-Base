@@ -37,13 +37,10 @@ const TrendingTopics: React.FC<TrendingTopicsProps> = ({
     
     try {
       const response = await apiEndpoints.getTrendingTopics();
-      console.log('TrendingTopics API response:', response);
       if (response.data.status === 'success') {
         setTopics(response.data.topics?.slice(0, limit) || []);
-        console.log('TrendingTopics set:', response.data.topics?.slice(0, limit) || []);
       } else {
         setError('Failed to fetch trending topics');
-        console.log('TrendingTopics API error:', response.data);
       }
     } catch (err) {
       console.error('Error fetching trending topics:', err);
@@ -216,7 +213,6 @@ const TrendingTopics: React.FC<TrendingTopicsProps> = ({
     // Always use fallback topics for compact mode to ensure it always shows something
     const displayTopics = fallbackTopics;
 
-    console.log('TrendingTopics compact rendering:', { topics, displayTopics, limit, loading, error });
 
     return (
       <div style={containerStyles}>

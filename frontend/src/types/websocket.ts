@@ -1,12 +1,15 @@
 // WebSocket message types for EAILI5 chat system
 
 export interface ChatMessage {
-  type: 'chat';
   message: string;
   user_id: string;
-  messageId: number;
-  learning_level?: number;
   context?: Record<string, any>;
+  // WebSocket-specific fields
+  type?: 'chat';
+  messageId?: number;
+  learning_level?: number;
+  session_id?: string;
+  streaming?: boolean;
 }
 
 export interface AIResponse {

@@ -26,9 +26,11 @@ steps:
       - 'REACT_APP_BASE_SEPOLIA_RPC_URL=https://sepolia.base.org'
       - '--build-arg'
       - 'REACT_APP_WALLET_CONNECT_PROJECT_ID=$$WALLETCONNECT_PROJECT_ID'
+      - '--build-arg'
+      - 'REACT_APP_COINBASE_API_KEY=$$COINBASE_API_KEY'
       - '.'
     dir: '.'
-    secretEnv: ['WALLETCONNECT_PROJECT_ID']
+    secretEnv: ['WALLETCONNECT_PROJECT_ID', 'COINBASE_API_KEY']
 
   # Step 3: Push versioned image
   - name: 'gcr.io/cloud-builders/docker'
@@ -83,5 +85,7 @@ availableSecrets:
   secretManager:
     - versionName: projects/$PROJECT_ID/secrets/walletconnect-project-id/versions/latest
       env: 'WALLETCONNECT_PROJECT_ID'
+    - versionName: projects/$PROJECT_ID/secrets/REACT_APP_COINBASE_API_KEY/versions/latest
+      env: 'COINBASE_API_KEY'
 
 

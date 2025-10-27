@@ -24,25 +24,37 @@ export interface HealthResponse {
 
 export interface TokenData {
   address: string;
-  symbol: string;
   name: string;
-  price: number;
-  priceChange24h: number;
-  volume24h: number;
-  marketCap: number;
-  liquidity: number;
+  symbol: string;
   decimals: number;
+  price: number;
+  market_cap: number;
+  volume_24h: number;
+  liquidity: number;
+  holders: number;
+  social_links: Record<string, string>;
+  description: string;
+  safety_score: number;
+  last_updated: string;
+  // Frontend-specific fields
+  priceChange24h?: number;
   logoUrl?: string;
 }
 
 export interface PortfolioState {
-  userId: string;
-  balance: number;
-  totalValue: number;
-  positions: PortfolioPosition[];
-  trades: Trade[];
-  performance: PerformanceMetrics;
-  lastUpdated: string;
+  user_id: string;
+  initial_balance: number;
+  cash_balance: number;
+  total_value: number;
+  holdings: Array<Record<string, any>>;
+  trade_count: number;
+  total_trades: number;
+  created_at: string;
+  last_updated: string;
+  // Frontend-specific fields
+  positions?: PortfolioPosition[];
+  trades?: Trade[];
+  performance?: PerformanceMetrics;
 }
 
 export interface PortfolioPosition {

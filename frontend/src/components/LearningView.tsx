@@ -15,17 +15,22 @@ const LearningView: React.FC = () => {
   const containerStyles: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
+    minHeight: '100%',
     height: '100%',
+    width: '100%',
     background: theme.background.primary,
     overflow: 'hidden',
+    position: 'relative',
   };
 
   const headerStyles: React.CSSProperties = {
+    flexShrink: 0,  // ✅ Prevent header from shrinking
     display: 'flex',
     alignItems: 'center',
     padding: isMobile ? '16px' : '20px',
     borderBottom: `1px solid ${theme.border.primary}`,
     background: theme.surface.primary,
+    minHeight: '60px',
     // Mobile-specific adjustments
     ...(isMobile && {
       paddingTop: 'max(16px, env(safe-area-inset-top))',
@@ -50,11 +55,13 @@ const LearningView: React.FC = () => {
 
   const contentStyles: React.CSSProperties = {
     flex: 1,
-    overflow: 'auto',
+    minHeight: 0,  // ✅ Critical for flex overflow
+    overflowY: 'auto',
+    WebkitOverflowScrolling: 'touch',
     padding: isMobile ? '16px' : '20px',
     // Mobile-specific adjustments
     ...(isMobile && {
-      paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+      paddingBottom: `max(80px, env(safe-area-inset-bottom))`,
       paddingLeft: 'max(16px, env(safe-area-inset-left))',
       paddingRight: 'max(16px, env(safe-area-inset-right))',
     }),

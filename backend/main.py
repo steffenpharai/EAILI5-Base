@@ -3,7 +3,7 @@ EAILI5 - Explain AI Like I'm Five - Crypto Education Platform
 Main FastAPI application entry point
 """
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import asyncio
@@ -312,6 +312,23 @@ async def test_logging():
     logger.info("This is an INFO log message")
     logger.debug("This is a DEBUG log message")
     return {"message": "Test logging endpoint called", "timestamp": datetime.now().isoformat()}
+
+# Mini App webhook endpoint (required for Base Build Preview validation)
+@app.post("/api/webhook")
+async def miniapp_webhook(request: Request):
+    """Handle Mini App webhook events from Base/Farcaster"""
+    try:
+        data = await request.json()
+        logger.info(f"Mini App webhook received: {data}")
+        
+        # Process events (add/remove, notifications, etc.)
+        event_type = data.get('event', {}).get('type')
+        logger.info(f"Event type: {event_type}")
+        
+        return {"status": "ok"}
+    except Exception as e:
+        logger.error(f"Error processing webhook: {e}")
+        return {"status": "error", "message": str(e)}
 
 @app.get("/api/tokens")
 async def get_tokens(category: str = "top15", limit: int = 15):

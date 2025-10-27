@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useMobile } from '../hooks/useMobile';
+import { Z_INDEX } from '../utils/zIndex';
 import PlatformStats from './PlatformStats';
 
 const Footer: React.FC = () => {
@@ -8,24 +9,20 @@ const Footer: React.FC = () => {
   const isMobile = useMobile();
 
   const footerStyles: React.CSSProperties = {
-    position: 'fixed',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '32px',
-    background: theme.surface.primary,
-    borderTop: `1px solid ${theme.border.primary}`,
+    flexShrink: 0,  // ✅ Prevent footer from shrinking
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '8px 16px',
-    fontSize: '10px',
+    height: isMobile ? '24px' : '32px',
+    background: theme.surface.primary,
+    borderTop: `1px solid ${theme.border.primary}`,
+    padding: isMobile ? '4px 12px' : '8px 16px',
+    fontSize: isMobile ? '9px' : '10px',
     fontFamily: 'Inter, system-ui, sans-serif',
     color: theme.text.secondary,
-    zIndex: 1000, // Ensure footer is above all content
+    zIndex: Z_INDEX.footer,
     // Mobile-specific safe area support
     ...(isMobile && {
-      zIndex: 1070,
       paddingBottom: 'max(8px, env(safe-area-inset-bottom))',
       height: 'calc(32px + max(8px, env(safe-area-inset-bottom)))',
     }),
@@ -40,8 +37,8 @@ const Footer: React.FC = () => {
   const rightSectionStyles: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    fontSize: '10px',
+    gap: isMobile ? '4px' : '8px',
+    fontSize: isMobile ? '8px' : '10px',
     color: theme.text.tertiary,
   };
 
@@ -51,9 +48,6 @@ const Footer: React.FC = () => {
     transition: 'color 150ms ease',
   };
 
-  const linkHoverStyles: React.CSSProperties = {
-    color: theme.accent.blue,
-  };
 
   return (
     <div style={footerStyles}>
@@ -81,7 +75,7 @@ const Footer: React.FC = () => {
         </a>
         <span>·</span>
         <a
-          href="https://base.org/builder-track"
+          href="https://x.com/SteffenPharai"
           target="_blank"
           rel="noopener noreferrer"
           style={linkStyles}
@@ -92,7 +86,7 @@ const Footer: React.FC = () => {
             e.currentTarget.style.color = theme.text.secondary;
           }}
         >
-          Base Builder Track
+          X
         </a>
       </div>
     </div>

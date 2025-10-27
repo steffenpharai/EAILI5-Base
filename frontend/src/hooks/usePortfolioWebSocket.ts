@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
-import { useAccount } from 'wagmi';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 /**
  * Hook to manage real-time portfolio WebSocket updates
@@ -14,17 +13,15 @@ export const usePortfolioWebSocket = (userId: string) => {
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
 
-  const connect = () => {
+  const connect = useCallback(() => {
     if (!userId || wsRef.current?.readyState === WebSocket.OPEN) return;
 
     try {
       const wsUrl = `${process.env.REACT_APP_WS_URL || 'ws://localhost:8000'}/ws/portfolio/${userId}`;
-      console.log('Connecting to portfolio WebSocket:', wsUrl);
       
       wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
-        console.log('Portfolio WebSocket connected');
         setIsConnected(true);
         setError(null);
         reconnectAttempts.current = 0;
@@ -33,13 +30,11 @@ export const usePortfolioWebSocket = (userId: string) => {
       wsRef.current.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log('Portfolio WebSocket message:', data);
           
           if (data.type === 'portfolio_update') {
             setPortfolioData(data.portfolio);
           } else if (data.type === 'trade_update') {
             // Handle individual trade updates
-            console.log('Trade update received:', data.trade);
           }
         } catch (err) {
           console.error('Error parsing portfolio WebSocket message:', err);
@@ -47,13 +42,11 @@ export const usePortfolioWebSocket = (userId: string) => {
       };
 
       wsRef.current.onclose = (event) => {
-        console.log('Portfolio WebSocket disconnected:', event.code, event.reason);
         setIsConnected(false);
         
         // Attempt to reconnect if not a normal closure
         if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
-          console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttempts.current + 1})`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttempts.current++;
@@ -73,7 +66,7 @@ export const usePortfolioWebSocket = (userId: string) => {
       console.error('Error creating portfolio WebSocket:', err);
       setError('Failed to connect to portfolio updates');
     }
-  };
+  }, [userId]);
 
   const disconnect = () => {
     if (reconnectTimeoutRef.current) {
@@ -106,7 +99,7 @@ export const usePortfolioWebSocket = (userId: string) => {
     return () => {
       disconnect();
     };
-  }, [userId]);
+  }, [userId, connect]);
 
   // Cleanup on unmount
   useEffect(() => {

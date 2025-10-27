@@ -1,7 +1,7 @@
 {
-  "short_name": "EALI5",
-  "name": "EALI5 - Explain AI Like I'm Five - Crypto Education",
-  "description": "Learn cryptocurrency through AI that explains complex concepts in simple terms and risk-free trading simulation on Base",
+  "short_name": "EAILI5",
+  "name": "EAILI5 - AI Crypto Education Base Mini App",
+  "description": "Base Batches Builder Track entry - Learn crypto through multi-agent AI, real-time Base DEX data, and risk-free portfolio simulation",
   "icons": [
     {
       "src": "favicon.ico",

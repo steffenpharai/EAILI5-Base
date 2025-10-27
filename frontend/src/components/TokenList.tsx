@@ -4,6 +4,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useMobile } from '../hooks/useMobile';
 import { useMobileDrawer } from '../hooks/useMobileLayout';
 import { useTokenWebSocket } from '../hooks/useTokenWebSocket';
+import { Z_INDEX } from '../utils/zIndex';
 import { ProInput } from './pro';
 import { Token } from '../hooks/useTokenData';
 
@@ -35,7 +36,7 @@ const TokenList: React.FC<TokenListProps> = ({
   const [showDropdown, setShowDropdown] = useState(false);
   const isMobile = useMobile();
   const { getDrawerStyles, getBackdropStyles } = useMobileDrawer();
-  const { isConnected: wsConnected, tokenUpdates, error: wsError } = useTokenWebSocket();
+  const { tokenUpdates } = useTokenWebSocket();
   
   // Drawer state for desktop
   const [isDrawerOpen, setIsDrawerOpen] = useState(true);
@@ -97,13 +98,24 @@ const TokenList: React.FC<TokenListProps> = ({
     padding: '0',
     gap: 0,
     // Mobile drawer styles using mobile layout system
-    ...(isMobile && getDrawerStyles(isMobileDrawerOpen)),
+    ...(isMobile && {
+      ...getDrawerStyles(isMobileDrawerOpen),
+      // Additional safe area padding for mobile drawer
+      paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
+    }),
   };
 
   const headerStyles: React.CSSProperties = {
     padding: isMobile ? '20px 16px 16px' : '16px',
     borderBottom: `1px solid ${theme.border.primary}`,
     position: 'relative',
+    // Safe area insets for mobile drawer
+    ...(isMobile && {
+      paddingTop: 'max(20px, env(safe-area-inset-top) + 20px)',
+      paddingBottom: 'max(16px, env(safe-area-inset-bottom) + 16px)',
+      paddingLeft: 'max(16px, env(safe-area-inset-left))',
+      paddingRight: 'max(16px, env(safe-area-inset-right))',
+    }),
   };
 
   const titleStyles: React.CSSProperties = {
@@ -207,12 +219,12 @@ const TokenList: React.FC<TokenListProps> = ({
     return `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
   };
 
-  // For mobile, keep the existing drawer behavior
+  // For mobile, use bottom drawer with FAB
   if (isMobile) {
     return (
       <>
-        {/* Mobile backdrop */}
-        <div style={getBackdropStyles(isMobileDrawerOpen)} onClick={onMobileDrawerToggle} />
+        {/* Mobile backdrop - only show when drawer is open */}
+        {isMobileDrawerOpen && <div style={getBackdropStyles(true)} onClick={onMobileDrawerToggle} />}
         
         <div style={containerStyles}>
         <div style={headerStyles}>
@@ -325,7 +337,7 @@ const TokenList: React.FC<TokenListProps> = ({
                 background: theme.surface.primary,
                 border: `1px solid ${theme.border.primary}`,
                 borderRadius: '6px',
-                zIndex: 1000,
+                zIndex: Z_INDEX.drawer,
                 marginTop: '4px',
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
               }}>
@@ -382,7 +394,17 @@ const TokenList: React.FC<TokenListProps> = ({
               Loading tokens...
             </div>
           ) : filteredTokens.length === 0 ? (
-            <div style={{ padding: '20px', textAlign: 'center', color: theme.text.secondary }}>
+            <div style={{ 
+              flex: 1,                              // ✅ Fill available space
+              display: 'flex',                       // ✅ Flexbox for centering
+              alignItems: 'center',                  // ✅ Vertical center
+              justifyContent: 'center',              // ✅ Horizontal center
+              padding: '40px 20px',
+              textAlign: 'center',
+              color: theme.text.tertiary,
+              fontSize: '14px',
+              background: theme.background.primary,  // ✅ Extend gray background
+            }}>
               No tokens found
             </div>
           ) : (
@@ -441,14 +463,22 @@ const TokenList: React.FC<TokenListProps> = ({
     borderRight: isDrawerOpen ? `1px solid ${theme.border.primary}` : 'none',
     display: 'flex',
     flexDirection: 'column',
-    height: '100%', // Full height of parent
+    height: '100%',      // ✅ KEEP: Fill parent height
     position: 'relative', // Not fixed
     flexShrink: 0
   };
 
 
   return (
-    <>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',  // ✅ ADD: Vertical layout for proper height flow
+      height: '100%',            // ✅ Fill parent (mainContentStyles) height
+      position: 'relative',      // ✅ Positioning context
+      flexShrink: 0,            // ✅ Don't shrink in flex parent
+      overflow: 'hidden',       // ✅ ADD: Contain children properly
+      minHeight: '100%',        // ✅ ADD: Ensure minimum height
+    }}>
       {/* Toggle Button - Always visible, positioned outside sidebar */}
       <button
         style={{
@@ -652,7 +682,17 @@ const TokenList: React.FC<TokenListProps> = ({
             Loading tokens...
           </div>
         ) : filteredTokens.length === 0 ? (
-          <div style={{ padding: '20px', textAlign: 'center', color: theme.text.secondary }}>
+          <div style={{ 
+            flex: 1,                              // ✅ Fill available space
+            display: 'flex',                       // ✅ Flexbox for centering
+            alignItems: 'center',                  // ✅ Vertical center
+            justifyContent: 'center',              // ✅ Horizontal center
+            padding: '40px 20px',
+            textAlign: 'center',
+            color: theme.text.tertiary,
+            fontSize: '14px',
+            background: theme.background.primary,  // ✅ Extend gray background
+          }}>
             No tokens found
           </div>
         ) : (
@@ -672,7 +712,6 @@ const TokenList: React.FC<TokenListProps> = ({
                       role="button"
                       tabIndex={0}
                       aria-label={`Select ${token.name} (${token.symbol}) token`}
-                      aria-selected={selectedToken?.address === token.address}
                       onMouseEnter={(e) => {
                         if (selectedToken?.address !== token.address) {
                           e.currentTarget.style.background = theme.surface.secondary;
@@ -719,7 +758,7 @@ const TokenList: React.FC<TokenListProps> = ({
       </div>
     </div>  {/* Close inner 280px container */}
     </div>  {/* Close outer sidebar */}
-    </>
+    </div>
   );
 };
 

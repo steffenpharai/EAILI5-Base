@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Sun, Moon, Settings, Home, BookOpen, Wallet, Brain, Menu, X, TrendingUp } from 'lucide-react';
+import { Sun, Moon, Settings, Home, BookOpen, Wallet, Menu, X } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation } from '../contexts/NavigationContext';
+import { useMobile } from '../hooks/useMobile';
 import { ProButton } from './pro';
 import { CompactWalletButton } from './WalletButton';
 import { getNetworkIndicator } from '../utils/minikit';
+import { Z_INDEX } from '../utils/zIndex';
 
 interface TopBarProps {
   portfolioBalance?: number;
@@ -14,6 +16,7 @@ interface TopBarProps {
 const TopBar: React.FC<TopBarProps> = ({ portfolioBalance = 100.00, onMobileTokenListToggle }) => {
   const { theme, toggleTheme } = useTheme();
   const { currentView, setView, goHome } = useNavigation();
+  const isMobile = useMobile();
   const networkIndicator = getNetworkIndicator();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -21,27 +24,21 @@ const TopBar: React.FC<TopBarProps> = ({ portfolioBalance = 100.00, onMobileToke
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '12px 20px',
-    paddingTop: 'max(12px, env(safe-area-inset-top))',
-    paddingLeft: 'max(20px, env(safe-area-inset-left))',
-    paddingRight: 'max(20px, env(safe-area-inset-right))',
+    padding: isMobile ? '6px 12px' : '12px 20px',
     background: theme.surface.primary,
     borderBottom: `1px solid ${theme.border.primary}`,
-    minHeight: '56px',
-    position: 'relative',
-    // Mobile-specific positioning
-    ...(window.innerWidth < 768 && {
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 1100,
-      width: '100%',
-    }),
+    minHeight: isMobile ? '44px' : '56px',
+    position: 'relative',  // ✅ Use relative, not fixed
+    zIndex: Z_INDEX.topBar,
+    flexShrink: 0,  // ✅ Prevent shrinking
+    // Safe area insets
+    paddingTop: isMobile ? 'max(6px, env(safe-area-inset-top))' : 'max(12px, env(safe-area-inset-top))',
+    paddingLeft: isMobile ? 'max(12px, env(safe-area-inset-left))' : 'max(20px, env(safe-area-inset-left))',
+    paddingRight: isMobile ? 'max(12px, env(safe-area-inset-right))' : 'max(20px, env(safe-area-inset-right))',
   };
 
   const logoStyles: React.CSSProperties = {
-    fontSize: 'clamp(16px, 4vw, 18px)',
+    fontSize: isMobile ? '14px' : 'clamp(16px, 4vw, 18px)',
     fontWeight: 600,
     color: theme.text.primary,
     fontFamily: 'Inter, system-ui, sans-serif',
@@ -68,7 +65,7 @@ const TopBar: React.FC<TopBarProps> = ({ portfolioBalance = 100.00, onMobileToke
     display: isMobileMenuOpen ? 'flex' : 'none',
     flexDirection: 'column',
     gap: '12px',
-    zIndex: 1085, // Below TopBar but above other elements
+    zIndex: Z_INDEX.mobileMenu, // Below TopBar but above other elements
   };
 
   const rightSectionStyles: React.CSSProperties = {
@@ -95,8 +92,19 @@ const TopBar: React.FC<TopBarProps> = ({ portfolioBalance = 100.00, onMobileToke
         {/* Logo and Navigation */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(12px, 3vw, 24px)' }}>
           <div style={logoStyles} onClick={goHome}>
-            <Brain className="w-5 h-5" />
-            EAILI5
+            <img 
+              src="/EAILI5.png" 
+              alt="EAILI5" 
+              style={{
+                height: isMobile ? '24px' : '32px',
+                width: 'auto',
+                cursor: 'pointer',
+                filter: theme.name === 'dark' ? 'invert(1) brightness(1.2) contrast(1.1)' : 'none',
+                transition: 'filter 0.2s ease',
+                transform: 'scale(1.5)',
+                transformOrigin: 'center'
+              }}
+            />
           </div>
           
           {/* Desktop Navigation */}
@@ -150,27 +158,7 @@ const TopBar: React.FC<TopBarProps> = ({ portfolioBalance = 100.00, onMobileToke
             {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
           
-          {/* Mobile Token List Toggle Button */}
-          {window.innerWidth < 768 && onMobileTokenListToggle && (
-            <button
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '44px',
-                height: '44px',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                color: theme.text.primary,
-                marginLeft: '8px',
-              }}
-              onClick={onMobileTokenListToggle}
-              title="Toggle Token List"
-            >
-              <TrendingUp size={20} />
-            </button>
-          )}
+          {/* Mobile Token List Toggle Button - REMOVED: Now using FAB */}
         </div>
 
         <div style={rightSectionStyles}>

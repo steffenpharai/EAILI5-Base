@@ -5,30 +5,29 @@ import '@coinbase/onchainkit/styles.css';
 import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
-import { OnchainKitProvider } from '@coinbase/onchainkit';
+import { MiniKitProvider } from '@coinbase/onchainkit/minikit';
 import App from './App';
 import { config } from './wagmi';
-import { initializeMiniApp, signalAppReady } from './utils/minikit';
+import { initializeMiniApp } from './utils/minikit';
 import { base } from 'wagmi/chains';
 
 const queryClient = new QueryClient();
 
 // Initialize Mini App features
 initializeMiniApp().then((miniAppInfo) => {
-  console.log('Mini App Info:', miniAppInfo);
 });
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 
-// Per OnchainKit docs: WagmiProvider and QueryClientProvider must wrap OnchainKitProvider
-// Reference: https://docs.base.org/onchainkit/latest/configuration/wagmi-viem-integration
+// Per OnchainKit docs: MiniKitProvider wraps OnchainKitProvider for Frame SDK integration
+// Reference: https://docs.base.org/onchainkit/latest/components/minikit/overview
 root.render(
   <React.StrictMode>
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <OnchainKitProvider
+        <MiniKitProvider
           apiKey={process.env.REACT_APP_COINBASE_API_KEY || ''}
           chain={base}
           config={{
@@ -59,14 +58,11 @@ root.render(
               },
             }}
           />
-        </OnchainKitProvider>
+        </MiniKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   </React.StrictMode>
 );
 
-// Signal to Farcaster that the app is ready after React renders
-// This dismisses the splash screen in Farcaster Mini Apps
-setTimeout(() => {
-  signalAppReady();
-}, 100);
+// Note: MiniKitProvider is for OnchainKit integration
+// Farcaster Mini App SDK requires explicit sdk.actions.ready() call in App.tsx

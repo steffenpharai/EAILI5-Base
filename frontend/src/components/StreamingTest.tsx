@@ -34,10 +34,8 @@ const StreamingTest: React.FC = () => {
           setResponse(prev => prev + chunk);
         },
         (agent: string, status: string) => {
-          console.log(`Agent ${agent}: ${status}`);
         },
         (suggestions: string[], learningLevel: number) => {
-          console.log('Stream complete:', { suggestions, learningLevel });
           setIsStreaming(false);
         },
         (error: string) => {

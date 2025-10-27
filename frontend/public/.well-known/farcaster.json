@@ -24,25 +24,12 @@
     ],
     "primaryCategory": "education",
     "tags": ["education", "ai", "defi", "trading", "learning"],
-    "heroImageUrl": "https://base.explainailikeimfive.com/logo512.png",
+    "heroImageUrl": "https://base.explainailikeimfive.com/og-image.png",
     "tagline": "Learn crypto with AI",
     "ogTitle": "EAILI5 - AI Crypto Education",
     "ogDescription": "AI-powered crypto education through real-time DEX data analysis and risk-free portfolio simulation",
-    "ogImageUrl": "https://base.explainailikeimfive.com/logo512.png",
-    "noindex": true
-  },
-  "_instructions": {
-    "sign_manifest": "To activate this manifest, you MUST sign it at https://base.dev",
-    "steps": [
-      "1. Visit https://base.dev and sign in with your Base account (stefo0.base.eth)",
-      "2. Navigate to Preview → Account Association",
-      "3. Enter your Mini App domain: base.explainailikeimfive.com",
-      "4. Follow on-screen instructions to sign the message in your wallet",
-      "5. Copy the generated accountAssociation object",
-      "6. Replace the accountAssociation section above with your signed data",
-      "7. Redeploy your application to production"
-    ],
-    "required_for": "Base Mini Apps in Coinbase Wallet and Farcaster clients"
+    "ogImageUrl": "https://base.explainailikeimfive.com/og-image.png",
+    "noindex": false
   }
 }
 

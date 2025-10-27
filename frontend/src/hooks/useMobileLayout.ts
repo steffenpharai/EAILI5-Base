@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useMobile } from './useMobile';
 import { useSafeArea } from './useMobile';
+import { Z_INDEX } from '../utils/zIndex';
 
 export interface MobileLayoutMetrics {
   // Viewport dimensions
@@ -58,6 +59,10 @@ export function useMobileLayout(config: MobileLayoutConfig = {}): MobileLayoutMe
   
   const [viewportHeight, setViewportHeight] = useState(() => {
     if (typeof window === 'undefined') return 0;
+    // Use visualViewport if available (accounts for keyboard)
+    if (window.visualViewport) {
+      return window.visualViewport.height;
+    }
     return window.innerHeight;
   });
   
@@ -85,8 +90,9 @@ export function useMobileLayout(config: MobileLayoutConfig = {}): MobileLayoutMe
     if (!isMobile) return;
     
     const handleResize = () => {
-      const newHeight = window.innerHeight;
-      const newWidth = window.innerWidth;
+      // Prioritize visualViewport for accurate height
+      const newHeight = window.visualViewport?.height || window.innerHeight;
+      const newWidth = window.visualViewport?.width || window.innerWidth;
       
       setViewportHeight(newHeight);
       setViewportWidth(newWidth);
@@ -117,10 +123,20 @@ export function useMobileLayout(config: MobileLayoutConfig = {}): MobileLayoutMe
       }, 100);
     };
     
+    // Listen to visualViewport changes (keyboard, zoom, etc.)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize);
+      window.visualViewport.addEventListener('scroll', handleResize);
+    }
+    
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleOrientationChange);
     
     return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize);
+        window.visualViewport.removeEventListener('scroll', handleResize);
+      }
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleOrientationChange);
     };
@@ -206,7 +222,7 @@ export function useMobileDrawer() {
       bottom: 0,
       left: 0,
       right: 0,
-      zIndex: 1090,
+      zIndex: Z_INDEX.drawer,
       transform: isOpen ? 'translateY(0)' : 'translateY(100%)',
       transition: 'transform 0.3s ease-out',
       maxHeight: `${Math.min(metrics.viewportHeight * 0.8, metrics.contentHeight)}px`,
@@ -224,7 +240,7 @@ export function useMobileDrawer() {
       right: 0,
       bottom: 0,
       background: 'rgba(0, 0, 0, 0.5)',
-      zIndex: 1089,
+      zIndex: Z_INDEX.drawerBackdrop,
       opacity: isOpen ? 1 : 0,
       transition: 'opacity 0.3s ease-out',
     };
@@ -251,7 +267,7 @@ export function useMobileChatInput() {
       return {
         position: 'sticky' as const,
         bottom: 0,
-        zIndex: 1060,
+        zIndex: Z_INDEX.fab + 1,
         background: 'var(--color-bg-primary)',
         borderTop: '1px solid var(--color-border-primary)',
         paddingTop: '16px',
@@ -264,7 +280,7 @@ export function useMobileChatInput() {
       bottom: 0,
       left: 0,
       right: 0,
-      zIndex: 1060,
+      zIndex: Z_INDEX.fab + 1,
       background: 'var(--color-bg-primary)',
       borderTop: '1px solid var(--color-border-primary)',
       paddingTop: '16px',

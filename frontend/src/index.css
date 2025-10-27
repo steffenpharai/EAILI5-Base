@@ -283,3 +283,53 @@ code {
     text-shadow: none !important;
   }
 }
+
+/* Desktop styles - ensure proper overflow */
+@media (min-width: 768px) {
+  html, body, #root {
+    height: 100vh;
+    overflow: hidden; /* No scroll on desktop */
+  }
+  
+  #root {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+}
+
+/* Mobile-specific body styles */
+@media (max-width: 767px) {
+  html, body, #root {
+    /* Use dynamic viewport height */
+    height: 100dvh;
+    height: 100vh; /* Fallback */
+    overflow: hidden;
+  }
+  
+  body {
+    /* Prevent overscroll bounce */
+    overscroll-behavior-y: none;
+    position: fixed;
+    width: 100%;
+    
+    /* Prevent zoom on input focus (iOS) */
+    touch-action: pan-y;
+  }
+  
+  #root {
+    /* Full viewport coverage */
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  /* Fix iOS rubber-band scrolling */
+  body.mobile-no-scroll {
+    position: fixed;
+    overflow: hidden;
+    width: 100%;
+  }
+}

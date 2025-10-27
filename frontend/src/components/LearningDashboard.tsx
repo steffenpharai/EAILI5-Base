@@ -177,7 +177,6 @@ const LearningDashboard: React.FC<LearningDashboardProps> = ({ userId = 'anonymo
         setAchievements(achievementsResponse.data.achievements || []);
       }
       
-      console.log('Lesson completed successfully:', lessonId);
     } catch (error) {
       console.error('Error completing lesson:', error);
     } finally {

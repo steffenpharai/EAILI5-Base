@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 /**
  * Hook to manage real-time token price WebSocket updates
@@ -13,17 +13,15 @@ export const useTokenWebSocket = () => {
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
 
-  const connect = () => {
+  const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
     try {
       const wsUrl = `${process.env.REACT_APP_WS_URL || 'ws://localhost:8000'}/ws/tokens`;
-      console.log('Connecting to token WebSocket:', wsUrl);
       
       wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
-        console.log('Token WebSocket connected');
         setIsConnected(true);
         setError(null);
         reconnectAttempts.current = 0;
@@ -32,7 +30,6 @@ export const useTokenWebSocket = () => {
       wsRef.current.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log('Token WebSocket message:', data);
           
           if (data.type === 'token_update') {
             // Update specific token data
@@ -65,13 +62,11 @@ export const useTokenWebSocket = () => {
       };
 
       wsRef.current.onclose = (event) => {
-        console.log('Token WebSocket disconnected:', event.code, event.reason);
         setIsConnected(false);
         
         // Attempt to reconnect if not a normal closure
         if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
-          console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttempts.current + 1})`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttempts.current++;
@@ -91,7 +86,7 @@ export const useTokenWebSocket = () => {
       console.error('Error creating token WebSocket:', err);
       setError('Failed to connect to token updates');
     }
-  };
+  }, []);
 
   const disconnect = () => {
     if (reconnectTimeoutRef.current) {
@@ -136,7 +131,7 @@ export const useTokenWebSocket = () => {
     return () => {
       disconnect();
     };
-  }, []);
+  }, [connect]);
 
   // Cleanup on unmount
   useEffect(() => {

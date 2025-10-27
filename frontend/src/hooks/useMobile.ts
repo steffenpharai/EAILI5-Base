@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 // Mobile breakpoint constant
 export const MOBILE_BREAKPOINT = 768;
@@ -60,7 +60,7 @@ export function useMediaQuery(query: string): boolean {
  * @returns boolean indicating touch capability
  */
 export function useTouchDevice(): boolean {
-  const [isTouchDevice, setIsTouchDevice] = useState(() => {
+  const [isTouchDevice] = useState(() => {
     if (typeof window === 'undefined') return false;
     
     return (
@@ -151,7 +151,7 @@ export function useDeviceInfo() {
   const orientation = useOrientation();
   const safeArea = useSafeArea();
   
-  const [userAgent, setUserAgent] = useState(() => {
+  const [userAgent] = useState(() => {
     if (typeof window === 'undefined') return '';
     return window.navigator.userAgent;
   });
@@ -204,7 +204,7 @@ export function useBreakpoints() {
  * @returns boolean indicating PWA mode
  */
 export function usePWA(): boolean {
-  const [isPWA, setIsPWA] = useState(() => {
+  const [isPWA] = useState(() => {
     if (typeof window === 'undefined') return false;
     
     return (

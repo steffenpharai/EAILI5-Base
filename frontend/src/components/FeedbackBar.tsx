@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { ThumbsUp, ThumbsDown, Heart, Info, X, Loader2, TrendingUp } from 'lucide-react';
+import React, { useState } from 'react';
+import { Info, X } from 'lucide-react';
 import { useAppreciation } from '../hooks/useAppreciation';
 import { useAccount } from 'wagmi';
 import { useTheme } from '../contexts/ThemeContext';
 import { useMobile } from '../hooks/useMobile';
+import { Z_INDEX } from '../utils/zIndex';
 import { 
   Transaction, 
   TransactionButton,
@@ -30,6 +31,7 @@ const FeedbackBar: React.FC<FeedbackBarProps> = ({
   className = '',
 }) => {
   const { theme } = useTheme();
+  const isMobile = useMobile();
   const { address } = useAccount();
   const {
     logAppreciationTransaction,
@@ -82,7 +84,7 @@ const FeedbackBar: React.FC<FeedbackBarProps> = ({
 
 
       const barStyles: React.CSSProperties = {
-        display: 'flex',
+        display: isMobile ? 'none' : 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '12px 20px', // Further increased padding to fit button properly
@@ -94,17 +96,13 @@ const FeedbackBar: React.FC<FeedbackBarProps> = ({
         fontSize: '10px',
         fontFamily: 'Inter, system-ui, sans-serif',
         gap: '8px',
+        flexShrink: 0,  // ✅ Prevent feedback bar from shrinking
         position: 'relative',
-        zIndex: 5,
-        // Mobile-specific positioning
-        ...(window.innerWidth < 768 && {
-          position: 'fixed',
-          top: '56px', // Below TopBar
-          left: 0,
-          right: 0,
-          zIndex: 1080,
-          width: '100%',
-        }),
+        zIndex: Z_INDEX.feedbackBar,
+        // Safe area insets for mobile
+        paddingTop: 'max(12px, env(safe-area-inset-top))',
+        paddingLeft: 'max(20px, env(safe-area-inset-left))',
+        paddingRight: 'max(20px, env(safe-area-inset-right))',
       };
 
       const leftSectionStyles: React.CSSProperties = {
@@ -140,25 +138,6 @@ const FeedbackBar: React.FC<FeedbackBarProps> = ({
   };
 
 
-  const supportButtonStyles: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    padding: '4px 8px',
-    borderRadius: '6px',
-    border: '1px solid #3B82F6',
-    background: 'rgba(59, 130, 246, 0.1)',
-    color: '#3B82F6',
-    cursor: address ? 'pointer' : 'not-allowed',
-    fontSize: '11px',
-    fontWeight: '500',
-    transition: 'all 0.2s ease',
-    minHeight: '24px',
-    opacity: address ? 1 : 0.5,
-    pointerEvents: 'auto',
-    zIndex: 10,
-    position: 'relative',
-  };
 
   const infoButtonStyles: React.CSSProperties = {
     ...buttonStyles,
@@ -194,7 +173,7 @@ const FeedbackBar: React.FC<FeedbackBarProps> = ({
                 fontSize: '12px',
                 color: theme.text.secondary,
                 maxWidth: '300px',
-                zIndex: 1000,
+                zIndex: Z_INDEX.modal,
                 boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
               }}>
                 <strong>On-Chain Support:</strong> Send ETH to stefo0.base.eth to support EAILI5. 
@@ -288,7 +267,6 @@ const FeedbackBar: React.FC<FeedbackBarProps> = ({
               limit={3}
               compact={true}
               onTopicClick={(topic) => {
-                console.log('Trending topic clicked:', topic);
                 // Could navigate to search or show related content
               }}
             />

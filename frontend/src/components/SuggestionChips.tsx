@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTheme } from '../contexts/ThemeContext';
+import { useMobile } from '../hooks/useMobile';
 
 interface SuggestionChipsProps {
   suggestions: string[];
@@ -13,6 +14,7 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
   className = '' 
 }) => {
   const { theme } = useTheme();
+  const isMobile = useMobile();
 
   if (!suggestions || suggestions.length === 0) {
     return null;
@@ -21,9 +23,9 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
   const chipStyles: React.CSSProperties = {
     background: theme.surface.tertiary,
     border: `1px solid ${theme.border.primary}`,
-    borderRadius: '20px',
-    padding: '8px 16px',
-    fontSize: '14px',
+    borderRadius: isMobile ? '16px' : '20px',
+    padding: isMobile ? '6px 12px' : '8px 16px',
+    fontSize: isMobile ? '12px' : '14px',
     color: theme.text.secondary,
     cursor: 'pointer',
     transition: 'all 150ms ease',
@@ -31,6 +33,7 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
     margin: '4px',
     maxWidth: '100%',
     wordWrap: 'break-word',
+    minHeight: isMobile ? '32px' : 'auto',  // Ensure touch target
   };
 
   const hoverStyles: React.CSSProperties = {
@@ -47,9 +50,9 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
       style={{
         display: 'flex',
         flexWrap: 'wrap',
-        gap: '8px',
-        marginTop: '16px',
-        marginBottom: '16px',
+        gap: isMobile ? '6px' : '8px',
+        marginTop: isMobile ? '10px' : '16px',
+        marginBottom: 0, // Remove bottom margin to prevent footer jumping
         padding: '0 4px',
       }}
     >

@@ -414,7 +414,6 @@ const TokenDetailsTest: React.FC = () => {
             {activeTab === 'tabs' && (
               <TokenDetailsTabs 
                 token={selectedToken} 
-                onTabChange={(tab) => console.log('Tab changed to:', tab)}
               />
             )}
             

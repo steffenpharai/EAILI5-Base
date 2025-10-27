@@ -23,14 +23,14 @@ const PortfolioView: React.FC = () => {
   const { goHome } = useNavigation();
   const isMobile = useMobile();
   const { address } = useAccount();
-  const { getPortfolio, simulateTrade, getPortfolioPerformance, getTradeHistory, isLoading } = usePortfolio();
+  const { getPortfolio, getPortfolioPerformance, getTradeHistory, isLoading } = usePortfolio();
   const { isConnected: wsConnected, portfolioData: wsPortfolioData, error: wsError } = usePortfolioWebSocket(address || 'anonymous');
   
   const [holdings, setHoldings] = useState<PortfolioHolding[]>([]);
   const [totalValue, setTotalValue] = useState(100.00);
   const [totalChange, setTotalChange] = useState(0.00);
-  const [performance, setPerformance] = useState<any>(null);
-  const [tradeHistory, setTradeHistory] = useState<any[]>([]);
+  const [, setPerformance] = useState<any>(null);
+  const [, setTradeHistory] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // Load portfolio data on component mount
@@ -73,7 +73,6 @@ const PortfolioView: React.FC = () => {
   // Handle real-time portfolio updates from WebSocket
   useEffect(() => {
     if (wsPortfolioData) {
-      console.log('Real-time portfolio update received:', wsPortfolioData);
       
       // Update portfolio data with real-time updates
       if (wsPortfolioData.holdings) {

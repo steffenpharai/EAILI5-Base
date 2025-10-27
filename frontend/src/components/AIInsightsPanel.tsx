@@ -152,7 +152,6 @@ const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ token, walletAddress 
         
         // Check if it's a session error and retry
         if (error.includes('session') || error.includes('expired') || error.includes('Invalid')) {
-          console.log('Session error detected, retrying with new session...');
           sessionManager.getOrCreateSession(walletAddress || 'anonymous')
             .then(newToken => {
               setSessionToken(newToken);

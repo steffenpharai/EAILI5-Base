@@ -495,7 +495,13 @@ const TradingChart: React.FC<TradingChartProps> = ({ token }) => {
               </div>
             </>
           ) : (
-            <div style={{ color: theme.text.secondary }}>Select a token to view chart</div>
+            <div style={{ 
+              color: theme.text.tertiary,
+              fontSize: '12px',
+              fontStyle: 'italic',
+            }}>
+              select a token to view chart
+            </div>
           )}
         </div>
 
@@ -607,8 +613,8 @@ const TradingChart: React.FC<TradingChartProps> = ({ token }) => {
           flex: 1, 
           position: 'relative',
           width: '100%', 
-          height: '400px',
-          minHeight: '400px',        // ADD: Ensure minimum height
+          height: isMobile ? '250px' : '400px',  // ✅ Smaller on mobile
+          minHeight: isMobile ? '250px' : '400px',  // ✅ Smaller min height on mobile
           cursor: 'crosshair',       // ADD: Better cursor for trading chart
           touchAction: 'none',       // ADD: Better touch handling
         }} 
@@ -638,13 +644,13 @@ const TradingChart: React.FC<TradingChartProps> = ({ token }) => {
               marginBottom: '8px',
               fontWeight: 500,
             }}>
-              Select a token to view chart
+              Select Token to Begin
             </div>
             <div style={{ 
               fontSize: isMobile ? '12px' : '13px',
               opacity: 0.7,
             }}>
-              Choose from the token list on the left
+              Choose a token from the sidebar to view live price charts
             </div>
           </div>
         )}
@@ -678,19 +684,6 @@ const TradingChart: React.FC<TradingChartProps> = ({ token }) => {
       </div>
 
       {/* Chart Controls Hint */}
-      <div style={{
-        fontSize: '11px',
-        color: theme.text.tertiary,
-        marginTop: '8px',
-        display: 'flex',
-        gap: '12px',
-        justifyContent: 'center',
-        opacity: 0.7,
-      }}>
-        <span>🖱️ Click + Drag to pan</span>
-        <span>⚙️ Scroll to zoom</span>
-        <span>↔️ Double-click to fit</span>
-      </div>
 
       {/* Settings Panel */}
       {showSettings && (
@@ -846,18 +839,6 @@ const TradingChart: React.FC<TradingChartProps> = ({ token }) => {
         </div>
       )}
 
-      {!token && !loading && (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          textAlign: 'center',
-          color: theme.text.tertiary,
-        }}>
-          Select a token from the list to view its chart
-        </div>
-      )}
     </div>
   );
 };

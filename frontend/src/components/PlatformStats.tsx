@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Users, MessageSquare, TrendingUp, Zap, ChevronDown } from 'lucide-react';
+import { Users, MessageSquare, TrendingUp, Zap } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
-import { useMobile } from '../hooks/useMobile';
 
 interface PlatformStatsProps {
   isCollapsed?: boolean;
@@ -151,19 +150,6 @@ const PlatformStats: React.FC<PlatformStatsProps> = ({ isCollapsed = false, onTo
     textAlign: 'center',
   };
 
-  const toggleButtonStyles: React.CSSProperties = {
-    background: 'transparent',
-    border: 'none',
-    color: theme.text.secondary,
-    cursor: 'pointer',
-    padding: '2px',
-    borderRadius: '4px',
-    fontSize: '12px',
-    transition: 'all 0.2s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  };
 
   const gridStyles: React.CSSProperties = {
     display: 'grid',

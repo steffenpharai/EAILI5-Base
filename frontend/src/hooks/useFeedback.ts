@@ -26,7 +26,6 @@ export const useFeedback = () => {
     
     try {
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      console.log('Logging appreciation to:', `${apiUrl}/api/appreciation/log`);
       
       const response = await fetch(`${apiUrl}/api/appreciation/log`, {
         method: 'POST',
@@ -41,14 +40,12 @@ export const useFeedback = () => {
         }),
       });
 
-      console.log('Appreciation response status:', response.status);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const result = await response.json();
-      console.log('Appreciation result:', result);
       
       return { success: result.status === 'success', data: result };
     } catch (error: unknown) {

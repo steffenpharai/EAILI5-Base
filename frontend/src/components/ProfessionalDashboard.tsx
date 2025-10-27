@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useSession } from '../contexts/SessionContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useMobile } from '../hooks/useMobile';
-import { useMobileContainer } from '../hooks/useMobileLayout';
 import { useTokenData, Token } from '../hooks/useTokenData';
 import TopBar from './TopBar';
 import TokenList from './TokenList';
+import MobileTokenFAB from './MobileTokenFAB';
 import WelcomeLanding from './WelcomeLanding';
 import TokenAnalysisView from './TokenAnalysisView';
 import LearningView from './LearningView';
@@ -16,12 +17,13 @@ import Footer from './Footer';
 const ProfessionalDashboard: React.FC = () => {
   const { currentView, selectedToken, selectToken, setView } = useNavigation();
   const { sessionToken, isSessionReady } = useSession();
+  const { theme } = useTheme();
   const isMobile = useMobile();
-  const { getContainerStyles, getContentStyles } = useMobileContainer();
   const [category, setCategory] = useState('top15');
   const { tokens, loading, refetch } = useTokenData(category);
   const [lastAIMessageId, setLastAIMessageId] = useState<string | undefined>();
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+
   
   const handleCategoryChange = (newCategory: string) => {
     setCategory(newCategory);
@@ -41,58 +43,29 @@ const ProfessionalDashboard: React.FC = () => {
   const dashboardStyles: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
-    height: '100vh',
-    width: '100vw',
-    background: 'transparent',
-    overflow: 'hidden',
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    margin: '0',
-    padding: '0',
+    height: '100vh', // Changed from minHeight to exact height
+    width: '100%',
+    background: theme.background.primary,
+    overflow: 'hidden', // Prevent any scrolling
   };
 
   const mainContentStyles: React.CSSProperties = {
-    display: 'flex',
     flex: 1,
-    overflow: 'hidden',
+    display: 'flex',
     flexDirection: isMobile ? 'column' : 'row',
-    height: isMobile ? 'calc(100vh - 172px)' : 'calc(100vh - 152px)', // Account for TopBar + FeedbackBar + Footer + extra spacing
-    gap: 0,
-    margin: 0,
-    padding: 0,
-    // Enhanced mobile layout with safe areas
-    ...(isMobile && {
-      paddingTop: 'env(safe-area-inset-top)',
-      paddingBottom: 'env(safe-area-inset-bottom)',
-      paddingLeft: 'env(safe-area-inset-left)',
-      paddingRight: 'env(safe-area-inset-right)',
-    }),
-    // Mobile layout system integration
-    ...(isMobile && getContainerStyles()),
-  } as React.CSSProperties;
+    overflow: 'hidden',
+    minHeight: 0,
+  };
 
   const dynamicMainAreaStyles: React.CSSProperties = {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    overflow: 'auto',
-    padding: '0',
-    margin: '0',
-    width: '100%',
-    height: '100%',
-    background: 'transparent',
-    gap: 0,
-    // Enhanced mobile layout with proper z-index management
-    ...(isMobile && {
-      position: 'relative',
-      zIndex: 1,
-      // Ensure content doesn't get hidden behind overlays
-      paddingBottom: '80px', // Space for AI Insights panel
-    }),
-    // Mobile layout system integration
-    ...(isMobile && getContentStyles()),
-  } as React.CSSProperties;
+    overflow: 'hidden',
+    minHeight: 0,
+    paddingBottom: 0, // ✅ Explicit no bottom padding
+    marginBottom: 0, // ✅ Explicit no bottom margin
+  };
 
   return (
     <div style={dashboardStyles}>
@@ -107,13 +80,9 @@ const ProfessionalDashboard: React.FC = () => {
         messageId={lastAIMessageId}
         sessionId={isSessionReady && sessionToken ? sessionToken : undefined}
         onSupportSent={(transactionHash) => {
-          console.log('Support transaction sent:', transactionHash);
           // Keep feedback bar visible after submission
         }}
       />
-
-      {/* Footer */}
-      <Footer />
 
       {/* Main Content Area */}
       <div style={mainContentStyles}>
@@ -148,6 +117,19 @@ const ProfessionalDashboard: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Mobile Token FAB - Only render on mobile */}
+      {isMobile && (
+        <MobileTokenFAB
+          isDrawerOpen={isMobileDrawerOpen}
+          onToggle={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
+          tokenCount={tokens.length}
+          hasNewTokens={false} // TODO: Implement new token detection
+        />
+      )}
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };

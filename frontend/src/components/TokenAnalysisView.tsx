@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, TrendingUp, TrendingDown, Shield, Users, DollarSign, Brain } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useSession } from '../contexts/SessionContext';
 import { useMobile } from '../hooks/useMobile';
-import { useMobileChatInput } from '../hooks/useMobileLayout';
 import { useChat } from '../hooks/useChat';
 import { ProButton, ProBadge } from './pro';
+import { Z_INDEX } from '../utils/zIndex';
 import TradingChart from './TradingChart';
 import SuggestionChips from './SuggestionChips';
 import TokenSentiment from './EnhancedTokenSentiment';
@@ -39,21 +39,21 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
   const { theme } = useTheme();
   const { goHome } = useNavigation();
   const { sessionToken, isSessionReady } = useSession();
-  const isMobile = useMobile();
-  const { getInputStyles } = useMobileChatInput();
   const { sendMessageStream, isConnected, connect } = useChat();
-  const [activeTab, setActiveTab] = useState<'chat' | 'learn' | 'insights'>('chat');
+  const isMobile = useMobile();
+  const [activeTab, setActiveTab] = useState<'chart' | 'chat' | 'learn' | 'insights'>('chat');
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSentiment, setShowSentiment] = useState(false);
   const isStreamingRef = useRef(false);
+  const messagesAreaRef = useRef<HTMLDivElement>(null); // Ref for auto-scrolling messages container
 
   // Connect WebSocket when session is ready
   useEffect(() => {
     if (isSessionReady && sessionToken) {
-      console.log('TokenAnalysisView: Connecting WebSocket with session token:', sessionToken);
       try {
         connect(sessionToken);
       } catch (error) {
@@ -61,6 +61,13 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
       }
     }
   }, [isSessionReady, sessionToken, connect]);
+
+  // Auto-scroll messages area to bottom when new messages arrive
+  useEffect(() => {
+    if (messagesAreaRef.current) {
+      messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   // Removed auto-analysis - only trigger on user action
 
@@ -70,7 +77,6 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
       return;
     }
 
-    console.log('Starting token analysis with session token:', sessionToken);
     const analysisPrompt = `Analyze ${token.symbol} (${token.name}). 
     Price: $${token.price}, 24h change: ${token.priceChange24h}%, 
     Volume: $${token.volume24h.toLocaleString()}, 
@@ -95,7 +101,6 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
         'anonymous',
         sessionToken,
         (chunk: string) => {
-          console.log('TokenAnalysisView received chunk:', JSON.stringify(chunk), 'Length:', chunk.length);
           setMessages(prev => {
             const updated = [...prev];
             const lastMessage = updated[updated.length - 1];
@@ -189,7 +194,6 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
     
     // Prevent multiple simultaneous streams
     if (isStreamingRef.current) {
-      console.log('Stream already in progress, ignoring request');
       return;
     }
     
@@ -225,7 +229,6 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
         'anonymous',
         sessionToken,
         (chunk: string) => {
-          console.log('TokenAnalysisView received chunk:', JSON.stringify(chunk), 'Length:', chunk.length);
           setMessages(prev => {
             const updated = [...prev];
             const lastMessage = updated[updated.length - 1];
@@ -308,6 +311,8 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
       );
     } catch (error: any) {
       setIsStreaming(false);
+      setIsAnalyzing(false);
+      isStreamingRef.current = false; // Reset streaming flag
       setMessages(prev => [...prev, {
         id: `error_${Date.now()}`,
         role: 'assistant',
@@ -357,6 +362,7 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
+    maxHeight: '100%', // Prevent expansion beyond parent
     background: theme.background.primary,
     overflow: 'hidden',
   };
@@ -365,7 +371,7 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '20px',
+    padding: isMobile ? '8px 12px' : '20px',
     borderBottom: `1px solid ${theme.border.primary}`,
     background: theme.surface.primary,
   };
@@ -373,14 +379,15 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
   const backButtonStyles: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
+    gap: isMobile ? '4px' : '8px',
     background: 'transparent',
     border: `1px solid ${theme.border.primary}`,
-    borderRadius: '8px',
-    padding: '8px 16px',
+    borderRadius: isMobile ? '6px' : '8px',
+    padding: isMobile ? '4px 8px' : '8px 16px',
     color: theme.text.secondary,
     cursor: 'pointer',
     transition: 'all 150ms ease',
+    fontSize: isMobile ? '12px' : '14px',
   };
 
   const tokenInfoStyles: React.CSSProperties = {
@@ -392,53 +399,99 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
   const mainContentStyles: React.CSSProperties = {
     flex: 1,
     display: 'flex',
-    overflow: 'hidden',
-    marginBottom: '40px', // Reduced space for footer
+    flexDirection: isMobile ? 'column' : 'row',  // ✅ Mobile: column, Desktop: row
+    overflow: isMobile ? 'auto' : 'hidden',  // ✅ Scroll on mobile, fixed on desktop
+    marginBottom: 0, // ✅ REMOVE: No bottom margin
     width: '100%', // Ensure full width
     minWidth: 0, // Allow flex items to shrink
+    height: isMobile ? 'auto' : '100%',  // ✅ Auto height on mobile allows natural stacking
+    WebkitOverflowScrolling: 'touch',  // ✅ Smooth scrolling on iOS
   };
 
   const leftSectionStyles: React.CSSProperties = {
-    flex: '0 0 65%',  // Increased back to give more space to chart
+    flex: isMobile ? 'none' : '0 0 65%',  // ✅ Don't flex on mobile
     display: 'flex',
     flexDirection: 'column',
-    padding: '12px',  // Reduced padding
-    paddingBottom: '80px', // Reduced footer spacing
-    borderRight: `1px solid ${theme.border.primary}`,
+    padding: isMobile ? '16px' : '12px',  // ✅ Larger mobile padding
+    paddingBottom: isMobile ? '16px' : '12px',
+    borderRight: isMobile ? 'none' : `1px solid ${theme.border.primary}`,  // ✅ No border on mobile
+    overflow: isMobile ? 'visible' : 'hidden',
+    height: isMobile ? 'auto' : '100%',
+    gap: isMobile ? '20px' : '16px',  // ✅ Larger mobile gap
+    minHeight: isMobile ? '280px' : 'auto', // ✅ Ensure minimum height for chart
   };
 
   const rightSectionStyles: React.CSSProperties = {
-    flex: '0 0 35%',  // Reduced to make more compact
+    flex: isMobile ? 'none' : '0 0 35%',  // ✅ Don't flex on mobile
     display: 'flex',
     flexDirection: 'column',
-    padding: '12px',  // Reduced padding
-    paddingBottom: '80px', // Reduced footer spacing
-    minWidth: '250px', // Smaller minimum width
-    overflow: 'visible', // Allow content to be visible
-    width: '100%', // Ensure full width
+    padding: isMobile ? '16px' : '12px',  // ✅ Larger mobile padding
+    paddingBottom: isMobile ? '16px' : '12px',
+    minWidth: isMobile ? 'auto' : '250px',  // ✅ No min width on mobile
+    overflow: isMobile ? 'visible' : 'hidden',  // ✅ Visible on mobile for natural flow
+    height: isMobile ? 'auto' : '100%',  // ✅ Auto height on mobile
+    width: '100%',
   };
 
   const statsGridStyles: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: '8px',  // Reduced gap
-    marginBottom: '16px',  // Reduced margin
+    display: isMobile ? 'flex' : 'grid',
+    gridTemplateColumns: isMobile ? 'none' : 'repeat(2, 1fr)',
+    flexDirection: isMobile ? 'row' : undefined,
+    overflowX: isMobile ? 'auto' : 'visible',
+    gap: isMobile ? '8px' : '8px',
+    marginBottom: isMobile ? '12px' : '16px',
+    WebkitOverflowScrolling: 'touch',
+    scrollbarWidth: 'none', // Firefox
+    msOverflowStyle: 'none', // IE/Edge
   };
 
   const statCardStyles: React.CSSProperties = {
     background: theme.surface.secondary,
     border: `1px solid ${theme.border.primary}`,
     borderRadius: '8px',
-    padding: '12px',
+    padding: isMobile ? '10px 8px' : '12px',
+    minHeight: isMobile ? '65px' : 'auto',
+    minWidth: isMobile ? '100px' : 'auto',
+    flexShrink: isMobile ? 0 : undefined,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
   };
 
-  const tabContainerStyles: React.CSSProperties = {
+  const mobileTabContainerStyles: React.CSSProperties = {
     display: 'flex',
     borderBottom: `1px solid ${theme.border.primary}`,
     marginBottom: '20px',
+    background: theme.surface.primary,
+    borderRadius: '8px',
+    padding: '4px',
+    gap: '4px',
   };
 
-  const tabButtonStyles: React.CSSProperties = {
+  const desktopTabContainerStyles: React.CSSProperties = {
+    display: 'flex',
+    borderBottom: `1px solid ${theme.border.primary}`,
+    marginBottom: '16px',
+    gap: '0',
+  };
+
+  const mobileTabButtonStyles: React.CSSProperties = {
+    background: 'transparent',
+    border: 'none',
+    padding: '12px 16px',
+    color: theme.text.secondary,
+    cursor: 'pointer',
+    borderRadius: '6px',
+    transition: 'all 150ms ease',
+    flex: 1,
+    fontSize: '14px',
+    fontWeight: '500',
+    minHeight: '44px',
+    touchAction: 'manipulation',
+    WebkitTapHighlightColor: 'transparent',
+  };
+
+  const desktopTabButtonStyles: React.CSSProperties = {
     background: 'transparent',
     border: 'none',
     padding: '12px 20px',
@@ -446,11 +499,21 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
     cursor: 'pointer',
     borderBottom: '2px solid transparent',
     transition: 'all 150ms ease',
+    fontSize: '16px',
+    fontWeight: '500',
+    minHeight: '44px',
   };
 
-  const activeTabStyles: React.CSSProperties = {
-    color: theme.accent.blue,
+  const mobileActiveTabStyles: React.CSSProperties = {
+    color: theme.text.primary,
+    background: theme.surface.secondary,
+    fontWeight: '600',
+  };
+
+  const desktopActiveTabStyles: React.CSSProperties = {
+    color: theme.text.primary,
     borderBottomColor: theme.accent.blue,
+    fontWeight: '600',
   };
 
   const chatAreaStyles: React.CSSProperties = {
@@ -458,6 +521,8 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
+    minHeight: 0, // Critical for flex containment
+    maxHeight: '100%', // Prevent expansion
   };
 
   const messagesAreaStyles: React.CSSProperties = {
@@ -466,23 +531,23 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
     padding: '16px',
     background: theme.surface.secondary,
     borderRadius: '8px',
-    marginBottom: '16px',
+    marginBottom: 0, // ✅ Remove bottom margin to prevent footer jumping
     border: `1px solid ${theme.border.primary}`,
   };
 
-  const messageStyles = (role: string): React.CSSProperties => ({
-    marginBottom: '12px',
+  const messageStyles = (role: string, isLast: boolean = false): React.CSSProperties => ({
+    marginBottom: isLast ? '0' : '12px', // ✅ No bottom margin on last message
     display: 'flex',
     justifyContent: role === 'user' ? 'flex-end' : 'flex-start',
   });
 
   const messageBubbleStyles = (role: string): React.CSSProperties => ({
-    maxWidth: window.innerWidth < 768 ? '90%' : '80%',
-    padding: window.innerWidth < 768 ? '16px 20px' : '12px 16px', // Better mobile padding
-    borderRadius: role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
+    maxWidth: isMobile ? '85%' : '80%',
+    padding: isMobile ? '12px 14px' : '12px 16px',
+    borderRadius: '12px',
     background: role === 'user' ? theme.accent.blue : theme.surface.primary,
     color: role === 'user' ? theme.text.inverted : theme.text.primary,
-    fontSize: window.innerWidth < 768 ? '16px' : '14px', // 16px prevents iOS zoom
+    fontSize: isMobile ? '14px' : '15px',
     lineHeight: 1.5, // Better readability
     minHeight: window.innerWidth < 768 ? '44px' : 'auto', // Touch-friendly minimum height
     // Enhanced mobile animations
@@ -490,8 +555,8 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
     // Better touch targets
     touchAction: 'manipulation',
     WebkitTapHighlightColor: 'transparent',
-    // Improved spacing
-    marginBottom: window.innerWidth < 768 ? '16px' : '12px',
+    // ✅ Remove marginBottom from bubble - spacing handled by messageStyles
+    marginBottom: 0,
     // Better text wrapping
     wordWrap: 'break-word',
     overflowWrap: 'break-word',
@@ -501,189 +566,10 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
     display: 'flex',
     gap: '8px',
     alignItems: 'center',
-    // Mobile optimizations using mobile layout system
-    ...(isMobile && getInputStyles(true)), // Use sticky positioning
+    // Mobile optimizations
   };
 
   // Always show full dashboard - removed simplified token-optional view
-  // if (!token) {
-  //   return (
-      <div style={containerStyles}>
-        {/* Simplified header for general crypto learning */}
-        <div style={headerStyles}>
-          <button style={backButtonStyles} onClick={goHome}>
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
-          </button>
-          
-          <div style={tokenInfoStyles}>
-            <div>
-              <h2 style={{ fontSize: '24px', fontWeight: 700, margin: 0, color: theme.text.primary }}>
-                Crypto Learning Assistant
-              </h2>
-              <p style={{ fontSize: '14px', color: theme.text.secondary, margin: '4px 0 0 0' }}>
-                Ask me anything about cryptocurrency
-              </p>
-            </div>
-            <ProBadge variant="bullish">
-              <Brain className="w-3 h-3" />
-              AI Powered
-            </ProBadge>
-          </div>
-        </div>
-
-        {/* Main Content - Mobile-first layout */}
-        <div style={{
-          ...mainContentStyles,
-          flexDirection: isMobile ? 'column' : 'row',
-        }}>
-          {/* Left Section - General crypto info or chart placeholder */}
-          <div style={{
-            ...leftSectionStyles,
-            flex: isMobile ? 'none' : '0 0 60%',
-            padding: isMobile ? '16px' : '20px',
-            borderRight: isMobile ? 'none' : `1px solid ${theme.border.primary}`,
-            borderBottom: isMobile ? `1px solid ${theme.border.primary}` : 'none',
-          }}>
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              textAlign: 'center',
-              color: theme.text.tertiary,
-              padding: '20px',
-            }}>
-              <Brain className="w-16 h-16 mb-4" style={{ color: theme.accent.blue }} />
-              <h3 style={{ fontSize: '18px', marginBottom: '8px', color: theme.text.primary }}>
-                General Crypto Learning
-              </h3>
-              <p style={{ fontSize: '14px', lineHeight: '1.5', marginBottom: '16px' }}>
-                Ask me about any cryptocurrency topic, blockchain technology, or trading concepts.
-              </p>
-              <ProButton
-                variant="primary"
-                size="lg"
-                onClick={() => {
-                  setInputMessage("Explain cryptocurrency to me like I'm 5 years old");
-                  setTimeout(() => handleSendMessage(), 100);
-                }}
-                disabled={isStreaming || isAnalyzing || !isConnected}
-                className="flex items-center gap-2"
-              >
-                <Brain className="w-4 h-4" />
-                Start Learning
-              </ProButton>
-            </div>
-          </div>
-
-          {/* Right Section - Chat Interface */}
-          <div style={{
-            ...rightSectionStyles,
-            flex: isMobile ? '1' : '0 0 40%',
-            padding: isMobile ? '16px' : '20px',
-          }}>
-            {/* General crypto stats or info */}
-            <div style={statsGridStyles}>
-              <div style={statCardStyles}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <Brain className="w-4 h-4" style={{ color: theme.accent.blue }} />
-                  <span style={{ fontSize: '12px', color: theme.text.secondary }}>AI Learning</span>
-                </div>
-                <div style={{ fontSize: '18px', fontWeight: 700, color: theme.text.primary }}>
-                  Always On
-                </div>
-              </div>
-
-              <div style={statCardStyles}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <TrendingUp className="w-4 h-4" style={{ color: theme.accent.green }} />
-                  <span style={{ fontSize: '12px', color: theme.text.secondary }}>Topics</span>
-                </div>
-                <div style={{ fontSize: '18px', fontWeight: 700, color: theme.text.primary }}>
-                  Unlimited
-                </div>
-              </div>
-            </div>
-
-            {/* Chat Interface */}
-            <div style={chatAreaStyles}>
-              <div style={messagesAreaStyles}>
-                {messages.map((message) => (
-                  <div key={message.id} style={messageStyles(message.role)}>
-                    <div style={messageBubbleStyles(message.role)}>
-                      {message.role === 'assistant' ? (
-                        <div 
-                          dangerouslySetInnerHTML={{ 
-                            __html: renderMarkdown(message.content) 
-                          }} 
-                        />
-                      ) : (
-                        message.content
-                      )}
-                    </div>
-                  </div>
-                ))}
-                
-                {/* Suggestion Chips for general topics */}
-                {suggestions.length > 0 && (
-                  <SuggestionChips 
-                    suggestions={suggestions}
-                    onSuggestionClick={handleSuggestionClick}
-                  />
-                )}
-              </div>
-
-              <div style={inputContainerStyles}>
-                <textarea
-                  value={inputMessage}
-                  onChange={(e) => {
-                    setInputMessage(e.target.value);
-                    // Auto-resize
-                    e.target.style.height = 'auto';
-                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-                  }}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Ask me anything about crypto..."
-                  disabled={!isConnected || isStreaming || isAnalyzing}
-                  style={{
-                    flex: 1,
-                    padding: '12px 16px',
-                    border: `1px solid ${theme.border.primary}`,
-                    borderRadius: '8px',
-                    background: theme.surface.primary,
-                    color: theme.text.primary,
-                    fontSize: '16px',
-                    fontFamily: 'Inter, system-ui, sans-serif',
-                    minHeight: '44px',
-                    maxHeight: '120px',
-                    resize: 'none',
-                    overflow: 'hidden',
-                    lineHeight: '1.5',
-                    touchAction: 'manipulation',
-                    WebkitTapHighlightColor: 'transparent',
-                  }}
-                  rows={1}
-                />
-                <ProButton
-                  onClick={handleSendMessage}
-                  disabled={!inputMessage.trim() || isStreaming || isAnalyzing || !isConnected}
-                  size="sm"
-                  style={{
-                    minHeight: '44px',
-                    minWidth: '44px',
-                  }}
-                >
-                  {isAnalyzing ? 'Analyzing...' : isStreaming ? 'Generating...' : 'Send'}
-                </ProButton>
-              </div>
-            </div>
-          </div>
-        </div>
-  //    </div>
-  //  );
-  // }
 
   return (
     <div style={containerStyles}>
@@ -696,10 +582,10 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
         
         <div style={tokenInfoStyles}>
           <div>
-            <h2 style={{ fontSize: '24px', fontWeight: 700, margin: 0, color: theme.text.primary }}>
+            <h2 style={{ fontSize: isMobile ? '14px' : '24px', fontWeight: 700, margin: 0, color: theme.text.primary }}>
               {token ? `${token.name} (${token.symbol})` : 'Crypto Learning Assistant'}
             </h2>
-            <p style={{ fontSize: '14px', color: theme.text.secondary, margin: '4px 0 0 0' }}>
+            <p style={{ fontSize: isMobile ? '10px' : '14px', color: theme.text.secondary, margin: isMobile ? '1px 0 0 0' : '4px 0 0 0' }}>
               {token ? 'Base • Ethereum L2' : 'Ask me anything about cryptocurrency'}
             </p>
           </div>
@@ -716,27 +602,62 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
         </div>
       </div>
 
+      {/* Mobile tabs removed - using single scrollable view */}
+
+      {/* Mobile: Floating Sentiment Toggle Button */}
+      {isMobile && (
+        <button
+          onClick={() => setShowSentiment(!showSentiment)}
+          style={{
+            position: 'fixed',
+            bottom: '16px',
+            right: '16px',
+            zIndex: Z_INDEX.fab,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '48px',
+            height: '48px',
+            background: showSentiment ? theme.accent.blue : theme.surface.secondary,
+            borderRadius: '50%',
+            border: `1px solid ${theme.border.primary}`,
+            cursor: 'pointer',
+            boxShadow: showSentiment ? '0 4px 12px rgba(59, 130, 246, 0.3)' : '0 4px 12px rgba(0, 0, 0, 0.1)',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            touchAction: 'manipulation',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          <Brain className="w-5 h-5" style={{ color: showSentiment ? theme.text.inverted : theme.text.primary }} />
+        </button>
+      )}
+
       {/* Main Content */}
       <div style={mainContentStyles}>
-        {/* Left Section - Chart */}
+        {/* Left Section - Chart (Desktop) / Always visible (Mobile) */}
         <div style={leftSectionStyles}>
           <TradingChart token={token} />
-          <TokenSentiment 
-            tokenAddress={token?.address || ''} 
-            tokenSymbol={token?.symbol || 'Crypto'} 
-          />
+          
+          
+          {/* TokenSentiment - Always show on desktop, conditional on mobile */}
+          {(!isMobile || showSentiment) && (
+            <TokenSentiment 
+              tokenAddress={token?.address || ''} 
+              tokenSymbol={token?.symbol || 'Crypto'} 
+            />
+          )}
         </div>
 
-        {/* Right Section - Stats & Chat */}
+        {/* Right Section - Stats & Chat (Desktop) / Always visible (Mobile) */}
         <div style={rightSectionStyles}>
-          {/* Token Stats */}
+          {/* Token Stats - Always visible */}
           <div style={statsGridStyles}>
-            <div style={statCardStyles}>
+              <div style={statCardStyles}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                 <DollarSign className="w-4 h-4" style={{ color: theme.accent.blue }} />
-                <span style={{ fontSize: '12px', color: theme.text.secondary }}>Price</span>
+                <span style={{ fontSize: isMobile ? '11px' : '12px', color: theme.text.secondary }}>Price</span>
               </div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: theme.text.primary }}>
+              <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: 700, color: theme.text.primary }}>
                 {token ? formatCurrency(token.price) : 'N/A'}
               </div>
             </div>
@@ -744,9 +665,9 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
             <div style={statCardStyles}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                 <TrendingUp className="w-4 h-4" style={{ color: theme.accent.green }} />
-                <span style={{ fontSize: '12px', color: theme.text.secondary }}>Volume 24h</span>
+                <span style={{ fontSize: isMobile ? '11px' : '12px', color: theme.text.secondary }}>Volume 24h</span>
               </div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: theme.text.primary }}>
+              <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: 700, color: theme.text.primary }}>
                 {token ? formatCurrency(token.volume24h) : 'N/A'}
               </div>
             </div>
@@ -754,9 +675,9 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
             <div style={statCardStyles}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                 <TrendingUp className="w-4 h-4" style={{ color: theme.accent.blue }} />
-                <span style={{ fontSize: '12px', color: theme.text.secondary }}>Market Cap</span>
+                <span style={{ fontSize: isMobile ? '11px' : '12px', color: theme.text.secondary }}>Market Cap</span>
               </div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: theme.text.primary }}>
+              <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: 700, color: theme.text.primary }}>
                 {token ? formatCurrency(token.marketCap) : 'N/A'}
               </div>
             </div>
@@ -764,9 +685,9 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
             <div style={statCardStyles}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                 <Shield className="w-4 h-4" style={{ color: token ? getSafetyColor(token.safetyScore) : theme.text.tertiary }} />
-                <span style={{ fontSize: '12px', color: theme.text.secondary }}>Safety Score</span>
+                <span style={{ fontSize: isMobile ? '11px' : '12px', color: theme.text.secondary }}>Safety Score</span>
               </div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: token ? getSafetyColor(token.safetyScore) : theme.text.tertiary }}>
+              <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: 700, color: token ? getSafetyColor(token.safetyScore) : theme.text.tertiary }}>
                 {token ? `${token.safetyScore}/100` : 'N/A'}
               </div>
             </div>
@@ -774,9 +695,9 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
             <div style={statCardStyles}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                 <Users className="w-4 h-4" style={{ color: theme.accent.orange }} />
-                <span style={{ fontSize: '12px', color: theme.text.secondary }}>Holders</span>
+                <span style={{ fontSize: isMobile ? '11px' : '12px', color: theme.text.secondary }}>Holders</span>
               </div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: theme.text.primary }}>
+              <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: 700, color: theme.text.primary }}>
                 {token ? formatNumber(token.holders) : 'N/A'}
               </div>
             </div>
@@ -784,65 +705,71 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
             <div style={statCardStyles}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                 <TrendingDown className="w-4 h-4" style={{ color: theme.accent.purple }} />
-                <span style={{ fontSize: '12px', color: theme.text.secondary }}>Liquidity</span>
+                <span style={{ fontSize: isMobile ? '11px' : '12px', color: theme.text.secondary }}>Liquidity</span>
               </div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: theme.text.primary }}>
+              <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: 700, color: theme.text.primary }}>
                 {token ? formatCurrency(token.liquidity) : 'N/A'}
               </div>
             </div>
           </div>
 
-          {/* Analyze Button */}
+          {/* Analyze Button - Always visible */}
           <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-            <ProButton
-              variant="primary"
-              size="lg"
-              onClick={analyzeToken}
-              disabled={isStreaming || !sessionToken}
-              className="flex items-center gap-2"
-            >
-              {isStreaming ? 'Analyzing...' : token ? `Analyze ${token.symbol}` : 'Analyze Crypto'}
-            </ProButton>
-          </div>
+              <ProButton
+                variant="primary"
+                size="lg"
+                onClick={analyzeToken}
+                disabled={isStreaming || !sessionToken}
+                className="flex items-center gap-2"
+                style={{
+                  width: isMobile ? '100%' : 'auto',  // ✅ Full width on mobile
+                  minHeight: '48px',  // ✅ Touch-friendly
+                }}
+              >
+                {isStreaming ? 'Analyzing...' : token ? `Analyze ${token.symbol}` : 'Analyze Crypto'}
+              </ProButton>
+            </div>
 
-          {/* Tabs */}
-          <div style={tabContainerStyles}>
-            <button
-              style={{
-                ...tabButtonStyles,
-                ...(activeTab === 'chat' ? activeTabStyles : {}),
-              }}
-              onClick={() => setActiveTab('chat')}
-            >
-              AI Chat
-            </button>
-            <button
-              style={{
-                ...tabButtonStyles,
-                ...(activeTab === 'learn' ? activeTabStyles : {}),
-              }}
-              onClick={() => setActiveTab('learn')}
-            >
-              Learn
-            </button>
-            <button
-              style={{
-                ...tabButtonStyles,
-                ...(activeTab === 'insights' ? activeTabStyles : {}),
-              }}
-              onClick={() => setActiveTab('insights')}
-            >
-              Insights
-            </button>
-          </div>
+          {/* Desktop Tabs - Hidden on Mobile */}
+          {!isMobile && (
+            <div style={desktopTabContainerStyles}>
+              <button
+                style={{
+                  ...desktopTabButtonStyles,
+                  ...(activeTab === 'chat' ? desktopActiveTabStyles : {}),
+                }}
+                onClick={() => setActiveTab('chat')}
+              >
+                AI Chat
+              </button>
+              <button
+                style={{
+                  ...desktopTabButtonStyles,
+                  ...(activeTab === 'learn' ? desktopActiveTabStyles : {}),
+                }}
+                onClick={() => setActiveTab('learn')}
+              >
+                Learn
+              </button>
+              <button
+                style={{
+                  ...desktopTabButtonStyles,
+                  ...(activeTab === 'insights' ? desktopActiveTabStyles : {}),
+                }}
+                onClick={() => setActiveTab('insights')}
+              >
+                Insights
+              </button>
+            </div>
+          )}
 
           {/* Tab Content */}
           <div style={chatAreaStyles}>
-            {activeTab === 'chat' && (
+            {(!isMobile && activeTab === 'chat') || isMobile ? (
               <>
-                <div style={messagesAreaStyles}>
-                  {messages.map((message) => (
-                    <div key={message.id} style={messageStyles(message.role)}>
+                <div style={messagesAreaStyles} ref={messagesAreaRef}>
+                  {messages.map((message, index) => (
+                    <div key={message.id} style={messageStyles(message.role, index === messages.length - 1)}>
                       <div style={messageBubbleStyles(message.role)}>
                         {message.role === 'assistant' ? (
                           <div 
@@ -868,7 +795,18 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
                   )}
                 </div>
 
-                <div style={inputContainerStyles}>
+                <div style={{
+                  ...inputContainerStyles,
+                  ...(isMobile && {
+                    position: 'sticky',
+                    bottom: 0,
+                    background: theme.surface.primary,
+                    borderTop: `1px solid ${theme.border.primary}`,
+                    padding: '16px',
+                    paddingBottom: `max(16px, env(safe-area-inset-bottom))`,
+                    zIndex: Z_INDEX.fab + 1,
+                  }),
+                }}>
                   <textarea
                     value={inputMessage}
                     onChange={(e) => {
@@ -882,14 +820,14 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
                     disabled={!isConnected || isStreaming || isAnalyzing}
                     style={{
                       flex: 1,
-                      padding: '12px 16px', // Touch-friendly padding
+                      padding: isMobile ? '16px' : '12px 16px',  // ✅ Larger mobile padding
                       border: `1px solid ${theme.border.primary}`,
                       borderRadius: '8px',
                       background: theme.surface.primary,
                       color: theme.text.primary,
                       fontSize: '16px', // Prevent iOS zoom
                       fontFamily: 'Inter, system-ui, sans-serif',
-                      minHeight: '44px', // Minimum touch target
+                      minHeight: isMobile ? '48px' : '44px',  // ✅ Larger mobile minimum
                       maxHeight: '120px', // Max height before scroll
                       resize: 'none',
                       overflow: 'hidden',
@@ -905,16 +843,17 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
                     disabled={!inputMessage.trim() || isStreaming || isAnalyzing || !isConnected}
                     size="sm"
                     style={{
-                      minHeight: '44px',
-                      minWidth: '44px',
+                      minHeight: isMobile ? '48px' : '44px',  // ✅ Larger mobile minimum
+                      minWidth: isMobile ? '48px' : '44px',  // ✅ Larger mobile minimum
                     }}
                   >
                     {isAnalyzing ? 'Analyzing...' : isStreaming ? 'Generating...' : 'Send'}
                   </ProButton>
                 </div>
               </>
-            )}
+            ) : null}
 
+            {/* Learn Tab - Desktop and Mobile */}
             {activeTab === 'learn' && (
               <div style={{ padding: '20px', textAlign: 'center', color: theme.text.secondary }}>
                 <h3>Learning content about {token ? token.symbol : 'cryptocurrency'}</h3>
@@ -922,6 +861,7 @@ const TokenAnalysisView: React.FC<TokenAnalysisViewProps> = ({ token, onAIMessag
               </div>
             )}
 
+            {/* Insights Tab - Desktop and Mobile */}
             {activeTab === 'insights' && (
               <div style={{ padding: '20px', textAlign: 'center', color: theme.text.secondary }}>
                 <h3>AI Insights for {token ? token.symbol : 'cryptocurrency'}</h3>

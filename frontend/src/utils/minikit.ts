@@ -84,7 +84,6 @@ export function initializeMiniApp(): Promise<MiniAppInfo> {
       // Mark app as MiniKit-enabled for detection
       document.documentElement.setAttribute('data-minikit-enabled', 'true');
       
-      console.log('🚀 EAILI5 Mini App initialized in Coinbase Wallet');
     }
     
     resolve(miniAppInfo);
@@ -98,9 +97,8 @@ export function initializeMiniApp(): Promise<MiniAppInfo> {
 export async function signalAppReady(): Promise<void> {
   try {
     await sdk.actions.ready();
-    console.log('✅ Farcaster Mini App ready signal sent');
   } catch (error) {
-    console.warn('⚠️ Farcaster SDK not available (running in web environment):', error);
+    // Silent fail - expected in web environment
   }
 }
 

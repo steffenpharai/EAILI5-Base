@@ -1,15 +1,5 @@
 import { useState, useCallback } from 'react';
 import { useAccount } from 'wagmi';
-import toast from 'react-hot-toast';
-import { getAppreciationAddress } from '../utils/basenameResolver';
-
-
-interface AppreciationData {
-  user_id: string;
-  transaction_hash: string;
-  amount_eth: number;
-  message_id?: string;
-}
 
 
 export const useAppreciation = () => {
@@ -26,7 +16,6 @@ export const useAppreciation = () => {
     
     try {
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      console.log('Logging appreciation to:', `${apiUrl}/api/appreciation/log`);
       
       const response = await fetch(`${apiUrl}/api/appreciation/log`, {
         method: 'POST',
@@ -41,14 +30,12 @@ export const useAppreciation = () => {
         }),
       });
 
-      console.log('Appreciation response status:', response.status);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const result = await response.json();
-      console.log('Appreciation result:', result);
       
       return { success: result.status === 'success', data: result };
     } catch (error: unknown) {

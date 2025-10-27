@@ -8,6 +8,7 @@ interface ProInputProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  style?: React.CSSProperties;
   onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   icon?: React.ReactNode;
 }
@@ -18,6 +19,7 @@ const ProInput: React.FC<ProInputProps> = ({
   placeholder = '',
   disabled = false,
   className = '',
+  style = {},
   onKeyPress,
   icon,
 }) => {
@@ -47,6 +49,7 @@ const ProInput: React.FC<ProInputProps> = ({
     // Auto-resize for textarea-like behavior
     resize: 'none',
     overflow: 'hidden',
+    ...style, // ✅ Merge with passed style prop
   };
 
   const iconStyles: React.CSSProperties = {

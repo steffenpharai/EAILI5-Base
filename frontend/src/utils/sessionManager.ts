@@ -69,12 +69,10 @@ class SessionManager {
   
   private async createNewSession(walletAddress?: string): Promise<string> {
     try {
-      console.log('Creating new session with API URL:', this.apiUrl);
       const requestBody = {
         user_id: walletAddress || 'anonymous',
         wallet_address: walletAddress
       };
-      console.log('Session creation request body:', requestBody);
       
       const response = await fetch(`${this.apiUrl}/api/session/create`, {
         method: 'POST',
@@ -82,7 +80,6 @@ class SessionManager {
         body: JSON.stringify(requestBody)
       });
       
-      console.log('Session creation response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -91,7 +88,6 @@ class SessionManager {
       }
       
       const data = await response.json();
-      console.log('Session creation response data:', data);
       
       if (!data.session_token) {
         console.error('Invalid session response:', data);
@@ -104,7 +100,6 @@ class SessionManager {
       localStorage.setItem(SESSION_KEY, data.session_token);
       localStorage.setItem(SESSION_EXPIRY_KEY, expiresAt.toString());
       
-      console.log('Session token stored in localStorage:', data.session_token);
       return data.session_token;
     } catch (error) {
       console.error('Error creating session:', error);

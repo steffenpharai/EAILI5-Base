@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Brain, BookOpen, Wallet, Send } from 'lucide-react';
+import { BookOpen, Wallet, Send } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useSession } from '../contexts/SessionContext';
 import { useMobile } from '../hooks/useMobile';
-import { useMobileChatInput } from '../hooks/useMobileLayout';
 import { useChat } from '../hooks/useChat';
 import { ProButton, ProInput } from './pro';
 import SuggestionChips from './SuggestionChips';
-import Footer from './Footer';
 // import FeedbackWidget from './FeedbackWidget'; // Removed - using FeedbackBar instead
 
 // Simple markdown renderer for basic formatting
@@ -37,7 +35,6 @@ const WelcomeLanding: React.FC<WelcomeLandingProps> = ({ onAIMessageGenerated })
   const { setView } = useNavigation();
   const { sessionToken, isSessionReady } = useSession();
   const isMobile = useMobile();
-  const { getInputStyles } = useMobileChatInput();
   const { sendMessageStream, isConnected, connect } = useChat();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -46,6 +43,7 @@ const WelcomeLanding: React.FC<WelcomeLandingProps> = ({ onAIMessageGenerated })
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const isStreamingRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesAreaRef = useRef<HTMLDivElement>(null); // Ref for auto-scrolling messages container
 
   // Connect WebSocket when session is ready
   useEffect(() => {
@@ -64,9 +62,11 @@ const WelcomeLanding: React.FC<WelcomeLandingProps> = ({ onAIMessageGenerated })
     }
   }, [isSessionReady, sessionToken, connect]);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll messages area to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesAreaRef.current) {
+      messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
+    }
   }, [messages]);
 
   const handleSendMessage = useCallback(async () => {
@@ -228,74 +228,46 @@ const WelcomeLanding: React.FC<WelcomeLandingProps> = ({ onAIMessageGenerated })
 
   const suggestedPrompts = [
     "What is DeFi and how does it work?",
-    "How do I analyze a token's safety?",
-    "Explain liquidity pools to me",
-    "Tell me about AAVE",
     "What are the risks of crypto investing?",
-    "How do smart contracts work?"
+    "How do I start trading on Base?",
+    "What is a blockchain and how does it work?",
+    "How do I keep my crypto safe?",
+    "What are the differences between Bitcoin and Ethereum?"
   ];
 
   const containerStyles: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
-    background: 'transparent',
-    overflow: 'hidden',
-    padding: '0',
-    margin: '0',
+    maxHeight: '100%', // Prevent expansion beyond parent
     width: '100%',
-    paddingBottom: '32px', // Account for fixed footer
-  };
-
-  const heroStyles: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    padding: window.innerWidth < 768 ? '40px 24px' : '60px 32px',
-    textAlign: 'center',
-    background: `linear-gradient(135deg, ${theme.background.primary} 0%, ${theme.background.secondary} 100%)`,
-    flex: '0 0 auto',
-    margin: '0',
+    overflow: 'hidden',
     position: 'relative',
-    borderBottom: `1px solid ${theme.border.primary}`,
+    margin: 0,
+    padding: 0,
+    paddingBottom: 0, // ✅ Explicit no bottom padding
+    marginBottom: 0, // ✅ Explicit no bottom margin
   };
 
-  const logoStyles: React.CSSProperties = {
-    fontSize: window.innerWidth < 768 ? '40px' : '56px',
-    fontWeight: 800,
-    color: theme.accent.blue,
-    marginBottom: '20px',
+
+  const chatInputContainerStyles: React.CSSProperties = {
     display: 'flex',
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: '16px',
-    letterSpacing: '-0.02em',
+    gap: '12px',
+    flexShrink: 0,
+    background: theme.surface.primary,
+    borderTop: `1px solid ${theme.border.primary}`,
+    padding: '16px',
+    paddingBottom: '16px', // ✅ Explicit bottom padding
+    width: '100%',
+    marginBottom: 0, // ✅ Ensure no bottom margin
   };
 
-  const taglineStyles: React.CSSProperties = {
-    fontSize: window.innerWidth < 768 ? '28px' : '36px',
-    fontWeight: 700,
-    color: theme.text.primary,
-    marginBottom: '20px',
-    lineHeight: 1.2,
-    letterSpacing: '-0.01em',
-  };
 
-  const subtitleStyles: React.CSSProperties = {
-    fontSize: '18px',
-    color: theme.text.secondary,
-    marginBottom: '40px',
-    maxWidth: '700px',
-    lineHeight: 1.6,
-    fontWeight: 400,
-  };
 
-  const actionButtonsStyles: React.CSSProperties = {
-    display: 'flex',
-    gap: '16px',
-    marginBottom: '32px',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  };
+
+
 
   const chatContainerStyles: React.CSSProperties = {
     flex: 1,
@@ -303,20 +275,23 @@ const WelcomeLanding: React.FC<WelcomeLandingProps> = ({ onAIMessageGenerated })
     flexDirection: 'column',
     padding: '0',
     overflow: 'hidden',
-    minHeight: '0',
+    minHeight: 0, // Critical for flex containment
+    maxHeight: '100%', // Prevent expansion
     margin: '0',
+    marginTop: '16px',
+    marginBottom: 0,
     background: 'transparent',
     border: 'none',
     borderRadius: '0',
     boxShadow: 'none',
-    marginTop: '16px',
     width: '100%',
   };
 
   const messagesAreaStyles: React.CSSProperties = {
     flex: 1,
     overflowY: 'auto',
-    padding: '0 24px 16px 24px',
+    padding: '0 24px 0 24px',  // ✅ Remove bottom padding - input is sticky
+    paddingBottom: 0, // ✅ Explicit no bottom padding
     margin: '0',
     background: 'transparent',
     borderRadius: '0',
@@ -327,19 +302,19 @@ const WelcomeLanding: React.FC<WelcomeLandingProps> = ({ onAIMessageGenerated })
     width: '100%',
   };
 
-  const messageStyles = (role: string): React.CSSProperties => ({
-    marginBottom: '16px',
+  const messageStyles = (role: string, isLast: boolean = false): React.CSSProperties => ({
+    marginBottom: isLast ? '0' : '16px', // ✅ No bottom margin on last message
     display: 'flex',
     justifyContent: role === 'user' ? 'flex-end' : 'flex-start',
   });
 
   const messageBubbleStyles = (role: string): React.CSSProperties => ({
-    maxWidth: isMobile ? '90%' : '70%',
-    padding: isMobile ? '16px 20px' : '12px 16px',
-    borderRadius: role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+    maxWidth: isMobile ? '85%' : '70%',
+    padding: isMobile ? '12px 14px' : '12px 16px',
+    borderRadius: '12px',
     background: role === 'user' ? theme.accent.blue : theme.surface.primary,
     color: role === 'user' ? theme.text.inverted : theme.text.primary,
-    fontSize: isMobile ? '16px' : '15px',
+    fontSize: isMobile ? '14px' : '15px',
     lineHeight: 1.5,
     wordWrap: 'break-word',
     minHeight: isMobile ? '44px' : 'auto',
@@ -349,82 +324,38 @@ const WelcomeLanding: React.FC<WelcomeLandingProps> = ({ onAIMessageGenerated })
     WebkitTapHighlightColor: 'transparent',
   });
 
-  const inputContainerStyles: React.CSSProperties = {
-    display: 'flex',
-    gap: isMobile ? '8px' : '12px',
-    alignItems: 'center',
-    padding: isMobile ? '12px 16px' : '16px 24px',
-    paddingBottom: isMobile 
-      ? 'max(12px, env(safe-area-inset-bottom))' 
-      : '16px',
-    margin: '16px 0 0 0',
-    background: isMobile ? theme.surface.primary : 'transparent',
-    border: 'none',
-    borderRadius: '0',
-    boxShadow: 'none',
-    width: '100%',
-    maxWidth: 'none',
-    minHeight: isMobile ? '60px' : 'auto',
-    position: isMobile ? 'sticky' : 'static',
-    bottom: isMobile ? '32px' : 'auto', // Account for footer height
-    zIndex: isMobile ? 1000 : 'auto',
-    borderTop: isMobile ? `1px solid ${theme.border.primary}` : 'none',
-    // Mobile layout system integration
-    ...(isMobile && getInputStyles(true)), // Use sticky positioning
-  };
 
-  const suggestionsStyles: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: '12px',
-    marginBottom: '0',
-    padding: '0',
-    margin: '0',
-  };
 
-  const suggestionButtonStyles: React.CSSProperties = {
-    background: theme.surface.tertiary,
-    border: `1px solid ${theme.border.primary}`,
-    borderRadius: '8px',
-    padding: '12px 20px',
-    fontSize: '14px',
-    color: theme.text.primary,
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    textAlign: 'left',
-    minHeight: '44px',
-    display: 'flex',
-    alignItems: 'center',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-    margin: '0',
-    fontWeight: '500',
-  };
 
   return (
     <div style={containerStyles}>
       {/* Single Unified Chat Interface */}
       <div style={chatContainerStyles}>
-        <div style={messagesAreaStyles}>
+        <div style={messagesAreaStyles} ref={messagesAreaRef}>
           {messages.length === 0 ? (
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              height: '100%',
-              textAlign: 'center',
-              padding: '60px 24px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                <Brain className="w-12 h-12" style={{ color: theme.accent.blue }} />
-                <span style={{ 
-                  fontSize: '32px', 
-                  fontWeight: '800', 
-                  color: theme.accent.blue,
-                  fontFamily: 'Inter, system-ui, sans-serif'
-                }}>
-                  EAILI5
-                </span>
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                height: '100%',
+                textAlign: 'center',
+                padding: isMobile ? '40px 20px' : '8px 24px'  // ✅ Further reduced desktop padding for compact layout
+              }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', height: isMobile ? '50px' : '60px' }}>
+                <img 
+                  src="/EAILI5.png" 
+                  alt="EAILI5" 
+                  style={{ 
+                    width: isMobile ? '160px' : '220px', 
+                    height: isMobile ? '50px' : '60px',
+                    marginBottom: '0',
+                    filter: theme.name === 'dark' ? 'invert(1) brightness(1.2) contrast(1.1)' : 'none',
+                    transition: 'filter 0.2s ease',
+                    objectFit: 'cover',
+                    objectPosition: 'center'
+                  }} 
+                />
               </div>
               
               {/* Base Batches Builder Track Statement */}
@@ -433,12 +364,12 @@ const WelcomeLanding: React.FC<WelcomeLandingProps> = ({ onAIMessageGenerated })
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                marginBottom: '16px',
-                padding: '8px 16px',
+                marginBottom: isMobile ? '8px' : '16px',
+                padding: isMobile ? '4px 10px' : '8px 16px',
                 background: `${theme.accent.blue}15`,
                 border: `1px solid ${theme.accent.blue}30`,
                 borderRadius: '20px',
-                fontSize: '14px',
+                fontSize: isMobile ? '11px' : '14px',
                 color: theme.accent.blue,
                 fontWeight: '500',
                 fontFamily: 'Inter, system-ui, sans-serif'
@@ -461,10 +392,10 @@ const WelcomeLanding: React.FC<WelcomeLandingProps> = ({ onAIMessageGenerated })
               </div>
               
               <h1 style={{ 
-                fontSize: isMobile ? '24px' : '32px', 
+                fontSize: isMobile ? '16px' : '32px',  // 20% reduction
                 fontWeight: '700', 
                 color: theme.text.primary,
-                marginBottom: '20px',
+                marginBottom: isMobile ? '8px' : '12px',
                 fontFamily: 'Inter, system-ui, sans-serif',
                 lineHeight: 1.2,
                 letterSpacing: '-0.01em'
@@ -473,92 +404,25 @@ const WelcomeLanding: React.FC<WelcomeLandingProps> = ({ onAIMessageGenerated })
               </h1>
               
               <p style={{ 
-                fontSize: '18px', 
+                fontSize: isMobile ? '13px' : '18px',  // 19% reduction
                 color: theme.text.secondary,
-                marginBottom: '48px',
+                marginBottom: isMobile ? '16px' : '24px',
                 maxWidth: '700px',
-                lineHeight: 1.6,
+                lineHeight: isMobile ? 1.4 : 1.6,  // Tighter line height
                 fontFamily: 'Inter, system-ui, sans-serif'
               }}>
                 Learn about crypto through real-time analysis and conversation. 
                 Ask me anything about blockchain, DeFi, tokens, and more! 
-                Click any token on the left to get personalized AI insights and analysis.
+                {!isMobile && ' Click any token on the left to get personalized AI insights and analysis.'}
               </p>
 
-              {/* Quick Action Buttons */}
-              <div style={{ 
-                display: 'flex', 
-                gap: '20px', 
-                marginBottom: '48px',
-                flexWrap: 'wrap',
-                justifyContent: 'center'
-              }}>
-                <button
-                  onClick={() => setView('learn')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '14px 28px',
-                    background: theme.accent.blue,
-                    color: theme.text.inverted,
-                    border: 'none',
-                    borderRadius: '10px',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-                    transition: 'all 0.2s ease',
-                  }}
-                  onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
-                  }}
-                  onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
-                  }}
-                >
-                  <BookOpen className="w-5 h-5" />
-                  Start Learning
-                </button>
-                
-                <button
-                  onClick={() => setView('portfolio')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '14px 28px',
-                    background: 'transparent',
-                    color: theme.text.primary,
-                    border: `1px solid ${theme.border.primary}`,
-                    borderRadius: '10px',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                    transition: 'all 0.2s ease',
-                  }}
-                  onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-                  }}
-                  onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
-                  }}
-                >
-                  <Wallet className="w-5 h-5" />
-                  View Portfolio
-                </button>
-              </div>
+              {/* Quick action buttons removed - redundant with TopBar navigation */}
 
 
 
               <div style={{
-                marginTop: '48px',
-                padding: '32px',
+                marginTop: isMobile ? '16px' : '24px',
+                padding: isMobile ? '12px 12px' : '20px',
                 background: theme.surface.primary,
                 borderRadius: '12px',
                 border: `1px solid ${theme.border.primary}`,
@@ -567,19 +431,19 @@ const WelcomeLanding: React.FC<WelcomeLandingProps> = ({ onAIMessageGenerated })
                 width: '100%'
               }}>
                 <h3 style={{
-                  fontSize: '18px',
+                  fontSize: isMobile ? '15px' : '18px',
                   fontWeight: '600',
                   color: theme.text.primary,
-                  marginBottom: '16px',
+                  marginBottom: isMobile ? '10px' : '16px',
                   textAlign: 'center',
                   fontFamily: 'Inter, system-ui, sans-serif'
                 }}>
                   Get Started with These Questions
                 </h3>
                 <p style={{
-                  fontSize: '14px',
+                  fontSize: isMobile ? '12px' : '14px',
                   color: theme.text.secondary,
-                  marginBottom: '24px',
+                  marginBottom: '16px',  // ✅ Reduced spacing for compact layout
                   textAlign: 'center',
                   fontFamily: 'Inter, system-ui, sans-serif'
                 }}>
@@ -587,29 +451,31 @@ const WelcomeLanding: React.FC<WelcomeLandingProps> = ({ onAIMessageGenerated })
                 </p>
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                  gap: '12px',
+                  gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',  // ✅ 2 columns on mobile, 3 columns on desktop
+                  gap: isMobile ? '6px' : '8px',  // ✅ Further reduced gap for compact layout
                   marginBottom: '0'
                 }}>
-                  {suggestedPrompts.map((prompt, index) => (
+                  {(isMobile ? suggestedPrompts.slice(0, 2) : suggestedPrompts).map((prompt, index) => (
                     <button
                       key={index}
                       style={{
                         background: theme.surface.secondary,
                         border: `1px solid ${theme.border.primary}`,
-                        borderRadius: '8px',
-                        padding: '16px 20px',
-                        fontSize: '14px',
+                        borderRadius: isMobile ? '6px' : '8px',  // ✅ Smaller border radius on mobile
+                        padding: isMobile ? '6px 10px' : '12px 16px',  // ✅ Much smaller padding on mobile
+                        fontSize: isMobile ? '12px' : '14px',  // ✅ Smaller font on mobile
                         color: theme.text.primary,
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
                         textAlign: 'left',
-                        minHeight: '48px',
+                        minHeight: isMobile ? '32px' : '48px',  // ✅ Smaller min height on mobile
                         display: 'flex',
                         alignItems: 'center',
                         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
                         fontFamily: 'Inter, system-ui, sans-serif',
-                        fontWeight: '500'
+                        fontWeight: '500',
+                        touchAction: 'manipulation',
+                        WebkitTapHighlightColor: 'transparent',
                       }}
                       onClick={() => setInputMessage(prompt)}
                       onMouseEnter={(e) => {
@@ -635,8 +501,8 @@ const WelcomeLanding: React.FC<WelcomeLandingProps> = ({ onAIMessageGenerated })
             </div>
           ) : (
             <>
-              {messages.map((message) => (
-                <div key={message.id} style={messageStyles(message.role)}>
+              {messages.map((message, index) => (
+                <div key={message.id} style={messageStyles(message.role, index === messages.length - 1)}>
                   <div style={messageBubbleStyles(message.role)}>
                     {message.role === 'assistant' ? (
                       <div 
@@ -661,34 +527,36 @@ const WelcomeLanding: React.FC<WelcomeLandingProps> = ({ onAIMessageGenerated })
                 />
               )}
               
-              <div ref={messagesEndRef} />
+              <div ref={messagesEndRef} style={{ height: 0, margin: 0, padding: 0 }} />
             </>
           )}
         </div>
 
         {/* Input Area */}
-        <div style={inputContainerStyles}>
+        <div style={chatInputContainerStyles}>
           <ProInput
             value={inputMessage}
             onChange={setInputMessage}
             onKeyPress={handleKeyPress}
             placeholder="Ask me anything about crypto..."
             disabled={!isConnected || isStreaming || isAnalyzing}
-            className="flex-1"
+            style={{ flex: 1 }}  // ✅ Inline style to fill space
           />
           <ProButton
             onClick={handleSendMessage}
             disabled={!inputMessage.trim() || isStreaming || isAnalyzing || !isConnected}
-            className="flex items-center gap-2"
+            style={{ 
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              flexShrink: 0,  // ✅ Don't shrink button
+            }}
           >
             <Send className="w-4 h-4" />
             {isAnalyzing ? 'Analyzing...' : isStreaming ? 'Generating...' : 'Send'}
           </ProButton>
         </div>
       </div>
-      
-      {/* Footer */}
-      <Footer />
     </div>
   );
 };

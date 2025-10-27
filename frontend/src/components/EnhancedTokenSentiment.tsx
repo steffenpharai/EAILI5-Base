@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useSession } from '../contexts/SessionContext';
 import { useChat } from '../hooks/useChat';
-import { TrendingUp, TrendingDown, Users, MessageCircle, Activity, AlertTriangle, Brain, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, Activity, AlertTriangle, Brain, BarChart3 } from 'lucide-react';
 import { ProBadge } from './pro';
 
 interface SentimentData {
@@ -188,11 +188,9 @@ const EnhancedTokenSentiment: React.FC<EnhancedTokenSentimentProps> = ({ tokenAd
         },
         (agent: string, status: string) => {
           // Handle agent status updates if needed
-          console.log(`Agent ${agent}: ${status}`);
         },
         (suggestions: string[], learning_level: number) => {
           // Handle suggestions and learning level
-          console.log('Suggestions:', suggestions);
         },
         (error: string) => {
           console.error('AI Reasoning stream error:', error);
@@ -327,7 +325,6 @@ const EnhancedTokenSentiment: React.FC<EnhancedTokenSentimentProps> = ({ tokenAd
     border: `1px solid ${theme.border.primary}`,
     borderRadius: '12px',
     padding: '20px',
-    marginTop: '16px',
   };
 
   const headerStyles: React.CSSProperties = {
@@ -415,6 +412,7 @@ const EnhancedTokenSentiment: React.FC<EnhancedTokenSentimentProps> = ({ tokenAd
     display: 'flex',
     gap: '12px',
     flexWrap: 'wrap',
+    marginTop: '16px',
   };
 
   const tabContentWrapperStyles: React.CSSProperties = {

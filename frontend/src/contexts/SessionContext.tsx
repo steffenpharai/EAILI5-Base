@@ -28,9 +28,7 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
 
   const initializeSession = async () => {
     try {
-      console.log('SessionContext: Initializing global session...');
       const token = await sessionManager.getOrCreateSession('anonymous');
-      console.log('SessionContext: Global session created:', token);
       setSessionToken(token);
       setUserId('anonymous');
       setIsSessionReady(true);
@@ -42,10 +40,8 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
 
   const refreshSession = async () => {
     try {
-      console.log('SessionContext: Refreshing session...');
       setIsSessionReady(false);
       const token = await sessionManager.getOrCreateSession('anonymous');
-      console.log('SessionContext: Session refreshed:', token);
       setSessionToken(token);
       setIsSessionReady(true);
     } catch (error) {
@@ -55,7 +51,6 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
   };
 
   const clearSession = () => {
-    console.log('SessionContext: Clearing session...');
     sessionManager.clearLocalSession();
     setSessionToken('');
     setIsSessionReady(false);
